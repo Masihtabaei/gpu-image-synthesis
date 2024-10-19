@@ -3,7 +3,7 @@ struct VertexShaderOutput
   float4 position : SV_POSITION;
   float3 viewSpacePosition : POSITION;
   float3 viewSpaceNormal : NORMAL;
-  float2 texCoord : TEXCOOD;
+  float2 texCoord : TEXCOORD;
 };
 
 struct VertexShaderOutput_Wireframe
