@@ -12,12 +12,12 @@ int main(int /* argc*/, char /* **argv */)
   config.debug    = true;
   try
   {
-    MeshViewer x(config);
-    x.run();
+    MeshViewer meshViewer(config);
+    meshViewer.run();
   }
-  catch (const std::exception& e)
+  catch (const std::exception& exceptionThrown)
   {
-    std::cerr << "Error: " << e.what() << "\n";
+    std::cerr << "Error: " << exceptionThrown.what() << "\n";
   }
   if (config.debug)
   {
