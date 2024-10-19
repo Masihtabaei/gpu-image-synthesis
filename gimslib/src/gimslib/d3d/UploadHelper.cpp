@@ -50,8 +50,8 @@ void UploadHelper::uploadTexture(const void* const imageData, ComPtr<ID3D12Resou
   textureData.RowPitch               = textureWidth * 4;
   textureData.SlicePitch             = textureData.RowPitch * textureHeight;
   UpdateSubresources(m_uploadCommandList.Get(), texture.Get(), m_uploadBuffer.Get(), 0, 0, 1, &textureData);
-  const auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(texture.Get(), D3D12_RESOURCE_STATE_COPY_DEST,
-                                                            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+      const auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(texture.Get(), D3D12_RESOURCE_STATE_COPY_DEST,
+                                                                D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
   m_uploadCommandList->ResourceBarrier(1, &barrier);
   m_uploadCommandList->Close();
   executeUploadSync(commandQueue);

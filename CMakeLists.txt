@@ -25,6 +25,7 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /Ox")
 
 project(GImS VERSION 0.0.1 DESCRIPTION "" LANGUAGES CXX C)
 add_subdirectory(./gimslib)
+add_subdirectory(./Assignments)
 add_subdirectory(./Tutorials)
 
 # set the startup project for the "play" button in MSVC
