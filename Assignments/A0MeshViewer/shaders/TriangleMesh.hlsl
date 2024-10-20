@@ -34,7 +34,7 @@ VertexShaderOutput VS_main(float3 position : POSITION /*float3 normal : NORMAL, 
   //output.viewSpacePosition = mul(mv, float4(position, 1.0f)).xyz;
   //output.viewSpaceNormal   = mul(mv, float4(normal, 0.0f)).xyz;
   //output.texCoord          = texCoord;
-  output.position = float4(position.xyz, 1.0f);
+  output.position = float4(position, 1.0f);
   return output;
 }
 
@@ -63,7 +63,8 @@ float4 PS_main(VertexShaderOutput input)
     //return float4(ambientColor.xyz + f_diffuse * diffuseColor.xyz * textureColor.xyz +
     //                  f_specular * specularColor_and_Exponent.xyz,
     //              1);
-    return float4(1.0f, 0.0f, 0.0f, 1.0f);
+    
+    return float4(1.0f, 1.0f, 0.0f, 1.0f);
 
 }
 

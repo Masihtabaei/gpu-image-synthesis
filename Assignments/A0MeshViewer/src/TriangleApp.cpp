@@ -107,7 +107,6 @@ void MeshViewer::createPipeline()
 
 void MeshViewer::createTriangleMesh()
 {
-
   UploadHelper uploadBuffer(getDevice(), std::max(m_vertexBufferOnCPUSizeInBytes, m_indexBufferOnCPUSizeInBytes));
 
   const CD3DX12_RESOURCE_DESC vertexBufferDescription = CD3DX12_RESOURCE_DESC::Buffer(m_vertexBufferOnCPUSizeInBytes);
@@ -189,7 +188,7 @@ f32m4 MeshViewer::getNormalizationTransformation()
   f32m4 orthographicProjectionMatrix = transpose(f32m4(
       0.5f, 0.0f, 0.0f, -centroid.x,
       0.0f, aspectRatio / 2, 0.0f, -centroid.y,
-      0.0f, 0.0f, 0.25f, -centroid.z,
+      0.0f, 0.0f, 0.5f,0.f,
       0.0f, 0.0f, 0.0f, 1.0f
   ));
 
@@ -206,6 +205,7 @@ std::cout << std::format("The app has a width of {} and a height of {}, resultin
 
 void MeshViewer::onDraw()
 {
+
   if (!ImGui::GetIO().WantCaptureMouse)
   {
     bool pressed  = ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right);
@@ -243,6 +243,14 @@ void MeshViewer::onDraw()
 
   commandList->RSSetViewports(1, &getViewport());
   commandList->RSSetScissorRects(1, &getRectScissor());
+
+  commandList->SetPipelineState(m_pipelineState.Get());
+  commandList->SetGraphicsRootSignature(m_rootSignature.Get());
+  commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+  commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
+  commandList->IASetIndexBuffer(&m_indexBufferView);
+
+  commandList->DrawIndexedInstanced(m_meshLoaded.getNumTriangles() * 3, 1, 0, 0, 0);
 
   // TODO Implement me!
 }
