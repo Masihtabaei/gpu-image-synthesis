@@ -16,8 +16,6 @@ public:
   ~MeshViewer();
   
   void         printInformationOfMeshLoaded();
-  void         loadVertices();
-  void         loadIndices();
   virtual void onDraw();
   virtual void onDrawUI();
 
@@ -34,6 +32,8 @@ private:
     f32v3 position;
   };
 
+  void loadVertices();
+  void loadIndices();
 
   CograBinaryMeshFile      m_meshLoaded;
   std::vector<Vertex>      m_vertexBufferOnCPU;
