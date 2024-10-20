@@ -46,12 +46,13 @@ private:
 
   DX12AppConfig m_appConfig;
   ComPtr<ID3D12RootSignature> m_rootSignature;
+  ComPtr<ID3D12PipelineState> m_pipelineState;
 
   f32v3         calculateCentroidOfMeshLoaded();
   f32m4 getNormalizationTransformation();
 
-  void createRootSignature();
-
+  void  createRootSignature();
+  void   createPipeline();
   UiData m_uiData;
 
 };

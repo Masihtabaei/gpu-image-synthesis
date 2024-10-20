@@ -26,6 +26,7 @@ MeshViewer::MeshViewer(const DX12AppConfig config)
   loadIndices();
   getNormalizationTransformation();
   createRootSignature();
+  createPipeline();
   // TODO Implement me!
 
 }
@@ -66,6 +67,43 @@ void MeshViewer::printInformationOfMeshLoaded()
     std::cout << std::format("Attribute Nr. {}: ", i + 1) << m_meshLoaded.getAttributeName(i) << std::endl;
   }
 }
+
+void MeshViewer::createPipeline()
+{
+
+  const auto vertexShader =
+      compileShader(L"../../../Assignments/A0MeshViewer/Shaders/TriangleMesh.hlsl", L"VS_main", L"vs_6_0");
+
+  const auto pixelShader =
+      compileShader(L"../../../Assignments/A0MeshViewer/Shaders/TriangleMesh.hlsl", L"PS_main", L"ps_6_0");
+
+  D3D12_INPUT_ELEMENT_DESC inputElementDescs[] = {
+      {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}};
+
+  D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+  psoDesc.InputLayout                      = {inputElementDescs, _countof(inputElementDescs)};
+  psoDesc.pRootSignature                   = m_rootSignature.Get();
+  psoDesc.VS                               = HLSLCompiler::convert(vertexShader);
+  psoDesc.PS                               = HLSLCompiler::convert(pixelShader);
+  psoDesc.RasterizerState                  = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+  psoDesc.RasterizerState.CullMode         = D3D12_CULL_MODE_NONE;
+  psoDesc.BlendState                       = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+  psoDesc.DepthStencilState                = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+  psoDesc.SampleMask                       = UINT_MAX;
+  psoDesc.PrimitiveTopologyType            = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+  psoDesc.NumRenderTargets                 = 1;
+  psoDesc.SampleDesc.Count                 = 1;
+  psoDesc.RTVFormats[0]                    = getRenderTarget()->GetDesc().Format;
+  psoDesc.DSVFormat                        = getDepthStencil()->GetDesc().Format;
+  psoDesc.DepthStencilState.DepthEnable    = FALSE;
+  psoDesc.DepthStencilState.DepthFunc      = D3D12_COMPARISON_FUNC_ALWAYS;
+  psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+  psoDesc.DepthStencilState.StencilEnable  = FALSE;
+
+  throwIfFailed(getDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pipelineState)));
+  std::cout << "The pipeline was created successfully!" << std::endl;
+}
+
 
 void MeshViewer::loadVertices()
 {

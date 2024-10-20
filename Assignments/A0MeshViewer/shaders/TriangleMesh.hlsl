@@ -26,42 +26,44 @@ cbuffer PerFrameConstants : register(b0)
 Texture2D<float3> g_texture : register(t0);
 SamplerState      g_sampler : register(s0);
 
-VertexShaderOutput VS_main(float3 position : POSITION, float3 normal : NORMAL, float2 texCoord : TEXCOORD)
+VertexShaderOutput VS_main(float3 position : POSITION /*float3 normal : NORMAL, float2 texCoord : TEXCOORD*/)
 {
   VertexShaderOutput output;
 
-  output.position          = mul(mvp, float4(position, 1.0f));
-  output.viewSpacePosition = mul(mv, float4(position, 1.0f)).xyz;
-  output.viewSpaceNormal   = mul(mv, float4(normal, 0.0f)).xyz;
-  output.texCoord          = texCoord;
+  //output.position          = mul(mvp, float4(position, 1.0f));
+  //output.viewSpacePosition = mul(mv, float4(position, 1.0f)).xyz;
+  //output.viewSpaceNormal   = mul(mv, float4(normal, 0.0f)).xyz;
+  //output.texCoord          = texCoord;
+  output.position = float4(position.xyz, 1.0f);
   return output;
 }
 
 float4 PS_main(VertexShaderOutput input)
     : SV_TARGET
 {  
-    bool twoSidedLighting = flags & 0x1;
-    bool useTexture       = flags & 0x2;
+    //bool twoSidedLighting = flags & 0x1;
+    //bool useTexture       = flags & 0x2;
 
-    float3 lightDirection = float3(0.0f, 0.0f, -1.0f);
+    //float3 lightDirection = float3(0.0f, 0.0f, -1.0f);
 
-    float3 l = normalize(lightDirection);
-    float3 n = normalize(input.viewSpaceNormal);
-    if (twoSidedLighting)
-    {
-      n = n.z < 0.0 ? n : -n;
-    }
-    float3 v = normalize(-input.viewSpacePosition);
-    float3 h = normalize(l + v);
+    //float3 l = normalize(lightDirection);
+    //float3 n = normalize(input.viewSpaceNormal);
+    //if (twoSidedLighting)
+    //{
+    //  n = n.z < 0.0 ? n : -n;
+    //}
+    //float3 v = normalize(-input.viewSpacePosition);
+    //float3 h = normalize(l + v);
 
-    float f_diffuse  = max(0.0f, dot(n, l));
-    float f_specular = pow(max(0.0f, dot(n, h)), specularColor_and_Exponent.w);
+    //float f_diffuse  = max(0.0f, dot(n, l));
+    //float f_specular = pow(max(0.0f, dot(n, h)), specularColor_and_Exponent.w);
 
-    float3 textureColor = useTexture ? g_texture.Sample(g_sampler, input.texCoord, 0) : float4(1, 1, 1, 0);
+    //float3 textureColor = useTexture ? g_texture.Sample(g_sampler, input.texCoord, 0) : float4(1, 1, 1, 0);
 
-    return float4(ambientColor.xyz + f_diffuse * diffuseColor.xyz * textureColor.xyz +
-                      f_specular * specularColor_and_Exponent.xyz,
-                  1);
+    //return float4(ambientColor.xyz + f_diffuse * diffuseColor.xyz * textureColor.xyz +
+    //                  f_specular * specularColor_and_Exponent.xyz,
+    //              1);
+    return float4(1.0f, 0.0f, 0.0f, 1.0f);
 
 }
 
