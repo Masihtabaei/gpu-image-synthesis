@@ -30,10 +30,13 @@ private:
   struct Vertex
   {
     f32v3 position;
+    //f32v3 normal;
   };
 
+  void loadMesh();
   void loadVertices();
   void loadIndices();
+  void loadNormals();
 
   CograBinaryMeshFile      m_meshLoaded;
   std::vector<Vertex>      m_vertexBufferOnCPU;
@@ -47,6 +50,7 @@ private:
   DX12AppConfig m_appConfig;
   ComPtr<ID3D12RootSignature> m_rootSignature;
   ComPtr<ID3D12PipelineState> m_pipelineState;
+  ComPtr<ID3D12PipelineState> m_secondPipelineState;
   ComPtr<ID3D12Resource>      m_vertexBuffer;
   D3D12_VERTEX_BUFFER_VIEW    m_vertexBufferView;
   ComPtr<ID3D12Resource>      m_indexBuffer;
@@ -58,6 +62,7 @@ private:
 
   void  createRootSignature();
   void   createPipeline();
+  void   createSecondPipeline();
   void   createTriangleMesh();
 
   UiData m_uiData;

@@ -68,16 +68,18 @@ float4 PS_main(VertexShaderOutput input)
 
 }
 
-VertexShaderOutput_Wireframe VS_WireFrame_main(float3 position : POSITION, float3 normal : NORMAL, float2 texCoord : TEXCOORD)
+VertexShaderOutput_Wireframe VS_WireFrame_main(float3 position : POSITION /*, float3 normal : NORMAL, float2 texCoord : TEXCOORD*/)
 {
     VertexShaderOutput_Wireframe output;
 
-    output.position          = mul(mvp, float4(position, 1.0f));
+    //output.position          = mul(mvp, float4(position, 1.0f));
+    output.position = float4(position, 1.0f);
     return output;
 }
 
 float4 PS_WireFrame_main(VertexShaderOutput_Wireframe input)
     : SV_TARGET
 {
-    return wireFrameColor;
+    //return wireFrameColor;
+    return float4(0.0f, 0.0f, 0.0f, 1.0f);
 }
