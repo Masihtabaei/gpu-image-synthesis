@@ -20,15 +20,10 @@ MeshViewer::MeshViewer(const DX12AppConfig config)
   m_appConfig = config;
   m_examinerController.setTranslationVector(f32v3(0, 0, 3));
   CograBinaryMeshFile cbm("../../../data/bunny.cbm");
-  m_meshLoaded = cbm;
-  loadMesh();
-  //getNormalizationTransformation();
+  loadMesh(cbm);
   createRootSignature();
   createPipeline();
-  createSecondPipeline();
   createTriangleMesh();
-  // TODO Implement me!
-
 }
 
 MeshViewer::~MeshViewer()
@@ -49,10 +44,10 @@ void MeshViewer::createRootSignature()
   std::cout << "The Root signature was created successfully!" << std::endl;
 }
 
-void MeshViewer::printInformationOfMeshLoaded()
+void MeshViewer::printInformationOfMeshToLoad()
 {
   ui32 numberOfAttributes = m_meshLoaded.getNumAttributes();
-  std::cout << std::format("The loaded mesh consists of {} vertices, resulting in {} position coordinates.\n"
+  std::cout << std::format("The mesh to load consists of {} vertices, resulting in {} position coordinates.\n"
                            "It also contains {} triangles, with a total of {} indices.\n"
                            "Additionally, there are {} constants and {}",
                            m_meshLoaded.getNumVertices(), m_meshLoaded.getNumVertices() * 3,
@@ -78,7 +73,8 @@ void MeshViewer::createPipeline()
       compileShader(L"../../../Assignments/A0MeshViewer/Shaders/TriangleMesh.hlsl", L"PS_main", L"ps_6_0");
 
   D3D12_INPUT_ELEMENT_DESC inputElementDescs[] = {
-      {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}};
+      {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+      {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}};
 
   D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineStateDescription = {};
   pipelineStateDescription.InputLayout                      = {inputElementDescs, _countof(inputElementDescs)};
@@ -101,44 +97,6 @@ void MeshViewer::createPipeline()
   pipelineStateDescription.DepthStencilState.StencilEnable  = FALSE;
 
   throwIfFailed(getDevice()->CreateGraphicsPipelineState(&pipelineStateDescription, IID_PPV_ARGS(&m_pipelineState)));
-  std::cout << "The pipeline was created successfully!" << std::endl;
-}
-
-void MeshViewer::createSecondPipeline()
-{
-
-  const auto vertexShader =
-      compileShader(L"../../../Assignments/A0MeshViewer/Shaders/TriangleMesh.hlsl", L"VS_WireFrame_main", L"vs_6_0");
-
-  const auto pixelShader =
-      compileShader(L"../../../Assignments/A0MeshViewer/Shaders/TriangleMesh.hlsl", L"PS_WireFrame_main", L"ps_6_0");
-
-  D3D12_INPUT_ELEMENT_DESC inputElementDescs[] = {
-      {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}};
-
-  D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineStateDescription = {};
-  pipelineStateDescription.InputLayout                        = {inputElementDescs, _countof(inputElementDescs)};
-  pipelineStateDescription.pRootSignature                     = m_rootSignature.Get();
-  pipelineStateDescription.VS                                 = HLSLCompiler::convert(vertexShader);
-  pipelineStateDescription.PS                                 = HLSLCompiler::convert(pixelShader);
-  pipelineStateDescription.RasterizerState                    = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-  pipelineStateDescription.RasterizerState.FillMode           = D3D12_FILL_MODE_WIREFRAME;
-  pipelineStateDescription.RasterizerState.CullMode           = D3D12_CULL_MODE_NONE;
-  pipelineStateDescription.BlendState                         = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-  pipelineStateDescription.DepthStencilState                  = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-  pipelineStateDescription.SampleMask                         = UINT_MAX;
-  pipelineStateDescription.PrimitiveTopologyType              = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-  pipelineStateDescription.NumRenderTargets                   = 1;
-  pipelineStateDescription.SampleDesc.Count                   = 1;
-  pipelineStateDescription.RTVFormats[0]                      = getRenderTarget()->GetDesc().Format;
-  pipelineStateDescription.DSVFormat                          = getDepthStencil()->GetDesc().Format;
-  pipelineStateDescription.DepthStencilState.DepthEnable      = FALSE;
-  pipelineStateDescription.DepthStencilState.DepthFunc        = D3D12_COMPARISON_FUNC_ALWAYS;
-  pipelineStateDescription.DepthStencilState.DepthWriteMask   = D3D12_DEPTH_WRITE_MASK_ALL;
-  pipelineStateDescription.DepthStencilState.StencilEnable    = FALSE;
-
-  throwIfFailed(
-      getDevice()->CreateGraphicsPipelineState(&pipelineStateDescription, IID_PPV_ARGS(&m_secondPipelineState)));
   std::cout << "The pipeline was created successfully!" << std::endl;
 }
 
@@ -167,9 +125,10 @@ void MeshViewer::createTriangleMesh()
   std::cout << "The triangle mesh was created successfully!" << std::endl;
 }
 
-void MeshViewer::loadMesh()
+void MeshViewer::loadMesh(const CograBinaryMeshFile& meshToLoad)
 {
-  printInformationOfMeshLoaded();
+  printInformationOfMeshToLoad();
+  m_meshLoaded = meshToLoad;
 
   for (ui32 i = 0; i < m_meshLoaded.getNumVertices(); i++)
   {
@@ -186,7 +145,7 @@ void MeshViewer::loadMesh()
   std::cout << "Size of vertex buffer:" << m_vertexBufferOnCPUSizeInBytes << std::endl;
   loadVertices();
   loadIndices();
-  //loadNormals();
+  loadNormals();
 }
 
 void MeshViewer::loadVertices()
@@ -235,7 +194,7 @@ void MeshViewer::loadNormals()
         normalsPointer[i * 3 + 1],
         normalsPointer[i * 3 + 2]);
 
-   // m_vertexBufferOnCPU.at(i).normal = currentNormal;
+    m_vertexBufferOnCPU.at(i).normal = currentNormal;
   }
 
   m_vertexBufferOnCPUSizeInBytes = m_vertexBufferOnCPU.size() * sizeof(Vertex);

@@ -15,7 +15,7 @@ public:
 
   ~MeshViewer();
   
-  void         printInformationOfMeshLoaded();
+  void         printInformationOfMeshToLoad();
   virtual void onDraw();
   virtual void onDrawUI();
 
@@ -30,10 +30,10 @@ private:
   struct Vertex
   {
     f32v3 position;
-    //f32v3 normal;
+    f32v3 normal;
   };
 
-  void loadMesh();
+  void loadMesh(const CograBinaryMeshFile& meshToLoad);
   void loadVertices();
   void loadIndices();
   void loadNormals();
@@ -50,19 +50,17 @@ private:
   DX12AppConfig m_appConfig;
   ComPtr<ID3D12RootSignature> m_rootSignature;
   ComPtr<ID3D12PipelineState> m_pipelineState;
-  ComPtr<ID3D12PipelineState> m_secondPipelineState;
   ComPtr<ID3D12Resource>      m_vertexBuffer;
   D3D12_VERTEX_BUFFER_VIEW    m_vertexBufferView;
   ComPtr<ID3D12Resource>      m_indexBuffer;
-  D3D12_INDEX_BUFFER_VIEW    m_indexBufferView;
+  D3D12_INDEX_BUFFER_VIEW     m_indexBufferView;
 
 
-  f32v3         calculateCentroidOfMeshLoaded();
+  f32v3 calculateCentroidOfMeshLoaded();
   f32m4 getNormalizationTransformation();
 
-  void  createRootSignature();
+  void   createRootSignature();
   void   createPipeline();
-  void   createSecondPipeline();
   void   createTriangleMesh();
 
   UiData m_uiData;
