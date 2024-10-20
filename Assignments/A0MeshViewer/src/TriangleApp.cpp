@@ -278,9 +278,8 @@ void MeshViewer::onDraw()
   commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
   // TODO Implement me!
 
-  const float clearColor[] = {m_uiData.m_backgroundColor.x, m_uiData.m_backgroundColor.y, m_uiData.m_backgroundColor.z,
-                              1.0f};
-  commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+
+  commandList->ClearRenderTargetView(rtvHandle, m_clearColor, 0, nullptr);
   commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
   commandList->RSSetViewports(1, &getViewport());
@@ -305,6 +304,14 @@ void MeshViewer::onDrawUI()
   ImGui::Begin("Information", nullptr, imGuiFlags);
   ImGui::Text("Frametime: %f", 1.0f / ImGui::GetIO().Framerate * 1000.0f);
   ImGui::End();
+
+  ImGui::Begin("Configurations", nullptr, imGuiFlags);
+  if (ImGui::ColorEdit3("Background Color", m_clearColor))
+  {
+    std::cout << "Background color changed!" << std::endl;
+  }
+  ImGui::End();
+
   // TODO Implement me!
 }
 

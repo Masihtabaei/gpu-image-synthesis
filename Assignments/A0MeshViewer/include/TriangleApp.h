@@ -64,5 +64,5 @@ private:
   void   createTriangleMesh();
 
   UiData m_uiData;
-
+  float m_clearColor[4] = {m_uiData.m_backgroundColor.x, m_uiData.m_backgroundColor.y, m_uiData.m_backgroundColor.z, 1.0f};
 };
