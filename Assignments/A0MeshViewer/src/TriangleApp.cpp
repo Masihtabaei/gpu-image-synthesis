@@ -27,6 +27,7 @@ MeshViewer::MeshViewer(const DX12AppConfig config)
   getNormalizationTransformation();
   createRootSignature();
   createPipeline();
+  createTriangleMesh();
   // TODO Implement me!
 
 }
@@ -104,6 +105,31 @@ void MeshViewer::createPipeline()
   std::cout << "The pipeline was created successfully!" << std::endl;
 }
 
+void MeshViewer::createTriangleMesh()
+{
+
+  UploadHelper uploadBuffer(getDevice(), std::max(m_vertexBufferOnCPUSizeInBytes, m_indexBufferOnCPUSizeInBytes));
+
+  const CD3DX12_RESOURCE_DESC vertexBufferDescription = CD3DX12_RESOURCE_DESC::Buffer(m_vertexBufferOnCPUSizeInBytes);
+  const CD3DX12_HEAP_PROPERTIES defaultHeapProperties   = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+  getDevice()->CreateCommittedResource(&defaultHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexBufferDescription,
+                                       D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&m_vertexBuffer));
+  m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
+  m_vertexBufferView.SizeInBytes    = static_cast<ui32>(m_vertexBufferOnCPUSizeInBytes);
+  m_vertexBufferView.StrideInBytes  = sizeof(Vertex);
+  uploadBuffer.uploadBuffer(m_vertexBufferOnCPU.data(), m_vertexBuffer, m_vertexBufferOnCPUSizeInBytes, getCommandQueue());
+
+  const CD3DX12_RESOURCE_DESC indexBufferDescription = CD3DX12_RESOURCE_DESC::Buffer(m_indexBufferOnCPUSizeInBytes);
+  getDevice()->CreateCommittedResource(&defaultHeapProperties, D3D12_HEAP_FLAG_NONE, &indexBufferDescription,
+                                       D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&m_indexBuffer));
+  m_indexBufferView.BufferLocation = m_indexBuffer->GetGPUVirtualAddress();
+  m_indexBufferView.SizeInBytes    = static_cast<ui32>(m_indexBufferOnCPUSizeInBytes);
+  m_indexBufferView.Format         = DXGI_FORMAT_R32_UINT;
+
+  uploadBuffer.uploadBuffer(m_indexBufferOnCPU.data(), m_indexBuffer, m_indexBufferOnCPUSizeInBytes, getCommandQueue());
+
+  std::cout << "The triangle mesh was created successfully!" << std::endl;
+}
 
 void MeshViewer::loadVertices()
 {
