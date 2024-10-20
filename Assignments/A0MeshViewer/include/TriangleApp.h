@@ -27,8 +27,8 @@ private:
   
   // TODO Implement me!
   CograBinaryMeshFile      m_meshLoaded;
-  std::vector<Vertex>           m_vertexBufferCPU;
-  size_t                   m_vertexBufferSize;
+  std::vector<Vertex>      m_vertexBufferCPU;
+  size_t                   m_vertexBufferCPUSize;
   gims::ExaminerController m_examinerController;
   f32m4                    m_normalizationTransformation;
 

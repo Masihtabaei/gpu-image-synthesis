@@ -76,8 +76,11 @@ void MeshViewer::loadVertices()
     Vertex currentVertex(currentPosition);
     m_vertexBufferCPU.push_back(currentVertex);
   }
-
-   std::cout << std::format("Total number of {} vertices loaded successfully!", m_vertexBufferCPU.size()) << std::endl;
+  m_vertexBufferCPUSize = m_vertexBufferCPU.size() * sizeof(Vertex);
+  std::cout << std::format(
+                   "A total of {} vertices were successfully loaded into the vertex buffer, with a size of {} bytes.",
+                   m_vertexBufferCPU.size(), m_vertexBufferCPUSize)
+            << std::endl;
 }
 
 void MeshViewer::onDraw()
