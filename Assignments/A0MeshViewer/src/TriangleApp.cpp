@@ -13,30 +13,18 @@
 
 using namespace gims;
 
-namespace
-{
-// TODO Implement me!
-
-f32m4 getNormalizationTransformation(f32v3 const* const positions, ui32 nPositions)
-{
-  // TODO Implement me!
-  // The cast to void is just to avoid warnings!
-  (void)nPositions;
-  (void)positions;
-  return f32m4(1);
-}
-} // namespace
-
 MeshViewer::MeshViewer(const DX12AppConfig config)
     : DX12App(config)
     , m_examinerController(true)
 {
+  m_appConfig = config;
   m_examinerController.setTranslationVector(f32v3(0, 0, 3));
   CograBinaryMeshFile cbm("../../../data/bunny.cbm");
   m_meshLoaded = cbm;
   printInformationOfMeshLoaded();
   loadVertices();
   loadIndices();
+  getNormalizationTransformation();
   // TODO Implement me!
 
 }
@@ -97,6 +85,45 @@ void MeshViewer::loadIndices()
                     m_indexBufferOnCPU.size(), m_indexBufferOnCPUSizeInBytes)
             << std::endl;
 }
+
+f32v3 MeshViewer::calculateCentroidOfMeshLoaded()
+{
+  f32v3 componentwiseSumOfPositions(0.0f, 0.0f, 0.0f);
+  for (const Vertex& vertex : m_vertexBufferOnCPU)
+  {
+    componentwiseSumOfPositions += vertex.position;
+  }
+  f32v3 centroid = componentwiseSumOfPositions / static_cast<f32>(m_vertexBufferOnCPU.size());
+  std::cout << std::format("The centroid of the model has the following coordinates: {}", to_string(centroid))
+            << std::endl;
+
+  return centroid;
+}
+
+f32m4 MeshViewer::getNormalizationTransformation()
+{
+  f32v3 centroid       = calculateCentroidOfMeshLoaded();
+  ui32 appWidth       = m_appConfig.width;
+  ui32 appHeight   = m_appConfig.height;
+  f32  aspectRatio    = appWidth / static_cast<f32>(appHeight);
+
+
+  f32m4 orthographicProjectionMatrix = transpose(f32m4(
+      0.5f, 0.0f, 0.0f, -centroid.x,
+      0.0f, aspectRatio / 2, 0.0f, -centroid.y,
+      0.0f, 0.0f, 0.25f, -centroid.z,
+      0.0f, 0.0f, 0.0f, 1.0f
+  ));
+
+std::cout << std::format("The app has a width of {} and a height of {}, resulting in an aspect ratio of {}. The "
+                           "corresponding orthographic projection matrix is {}",
+                           appWidth, appHeight, aspectRatio,
+                           glm::to_string(glm::transpose(orthographicProjectionMatrix)))
+            << std::endl;
+
+   return orthographicProjectionMatrix;
+}
+
 
 void MeshViewer::onDraw()
 {

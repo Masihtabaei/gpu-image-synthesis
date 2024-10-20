@@ -6,10 +6,7 @@
 
 using namespace gims;
 
-struct Vertex
-{
-  f32v3 position;
-};
+
     
 class MeshViewer : public gims::DX12App
 {
@@ -25,7 +22,18 @@ public:
   virtual void onDrawUI();
 
 private:
-  
+
+  struct UiData
+  {
+    f32v3 m_backgroundColor = f32v3(0.25f, 0.25f, 0.25f);
+    // TODO Implement me!
+  };
+
+  struct Vertex
+  {
+    f32v3 position;
+  };
+
   // TODO Implement me!
   CograBinaryMeshFile      m_meshLoaded;
   std::vector<Vertex>      m_vertexBufferOnCPU;
@@ -36,11 +44,11 @@ private:
   gims::ExaminerController m_examinerController;
   f32m4                    m_normalizationTransformation;
 
-  struct UiData
-  {
-    f32v3 m_backgroundColor  = f32v3(0.25f, 0.25f, 0.25f);
-  // TODO Implement me!
-  };
+  DX12AppConfig m_appConfig;
+  f32v3         calculateCentroidOfMeshLoaded();
+  f32m4 getNormalizationTransformation();
+
+
 
   UiData m_uiData;
 
