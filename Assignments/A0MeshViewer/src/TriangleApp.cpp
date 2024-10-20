@@ -8,6 +8,7 @@
 #include <gimslib/sys/Event.hpp>
 #include <imgui.h>
 #include <iostream>
+#include <format>
 #include <vector>
 
 using namespace gims;
@@ -33,8 +34,8 @@ MeshViewer::MeshViewer(const DX12AppConfig config)
   m_examinerController.setTranslationVector(f32v3(0, 0, 3));
   CograBinaryMeshFile cbm("../../../data/bunny.cbm");
   m_meshLoaded = cbm;
-
    printInformationOfMeshLoaded();
+  loadVertices();
   // TODO Implement me!
 
 }
@@ -47,18 +48,37 @@ MeshViewer::~MeshViewer()
 void MeshViewer::printInformationOfMeshLoaded()
 {
   ui32 numberOfAttributes = m_meshLoaded.getNumAttributes();
-  std::cout << "Number of vertices: " << m_meshLoaded.getNumVertices() << std::endl;
-  std::cout << "Number of vertex positions:" << m_meshLoaded.getNumVertices() * 3 << std::endl;
-  std::cout << "Number of triangles: " << m_meshLoaded.getNumTriangles() << std::endl;
-  std::cout << "Number of indices: " << m_meshLoaded.getNumTriangles() * 3 << std::endl;
-  std::cout << "Number of Constants: " << m_meshLoaded.getNumConstants() << std::endl;
-  std::cout << "Number of attributes: " << numberOfAttributes << std::endl;
+  std::cout << std::format("The loaded mesh consists of {} vertices, resulting in {} position coordinates.\n"
+                           "It also contains {} triangles, with a total of {} indices.\n"
+                           "Additionally, there are {} constants and {}",
+                           m_meshLoaded.getNumVertices(), m_meshLoaded.getNumVertices() * 3,
+                           m_meshLoaded.getNumTriangles(), m_meshLoaded.getNumTriangles() * 3,
+                           m_meshLoaded.getNumConstants(),
+                           numberOfAttributes == 0 
+      ? "no attribute available!" 
+      : std::format("following {} attributes available:", numberOfAttributes))
+      << std::endl;
   for (ui32 i = 0; i < numberOfAttributes; i++)
   {
-    std::cout << "Attribute Nr. " << i << ": " << m_meshLoaded.getAttributeName(i) << std::endl;
+    std::cout << std::format("Attribute Nr. {}: ", i + 1) << m_meshLoaded.getAttributeName(i) << std::endl;
   }
 }
 
+void MeshViewer::loadVertices()
+{
+  CograBinaryMeshFile::FloatType* positionsPointer = m_meshLoaded.getPositionsPtr();
+  for (ui32 i = 0; i < m_meshLoaded.getNumVertices() * 3; i += 3)
+  {
+    f32v3  currentPosition(
+        positionsPointer[i],
+        positionsPointer[i + 1],
+        positionsPointer[i + 2]);
+    Vertex currentVertex(currentPosition);
+    m_vertexBufferCPU.push_back(currentVertex);
+  }
+
+   std::cout << std::format("Total number of {} vertices loaded successfully!", m_vertexBufferCPU.size()) << std::endl;
+}
 
 void MeshViewer::onDraw()
 {

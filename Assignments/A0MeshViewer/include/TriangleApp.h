@@ -5,6 +5,12 @@
 #include <gimslib/io/CograBinaryMeshFile.hpp>
 
 using namespace gims;
+
+struct Vertex
+{
+  f32v3 position;
+};
+    
 class MeshViewer : public gims::DX12App
 {
 public:
@@ -13,12 +19,16 @@ public:
   ~MeshViewer();
   
   void         printInformationOfMeshLoaded();
+  void         loadVertices();
   virtual void onDraw();
   virtual void onDrawUI();
 
-private:  
+private:
+  
   // TODO Implement me!
   CograBinaryMeshFile      m_meshLoaded;
+  std::vector<Vertex>           m_vertexBufferCPU;
+  size_t                   m_vertexBufferSize;
   gims::ExaminerController m_examinerController;
   f32m4                    m_normalizationTransformation;
 
