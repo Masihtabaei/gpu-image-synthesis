@@ -34,8 +34,9 @@ MeshViewer::MeshViewer(const DX12AppConfig config)
   m_examinerController.setTranslationVector(f32v3(0, 0, 3));
   CograBinaryMeshFile cbm("../../../data/bunny.cbm");
   m_meshLoaded = cbm;
-   printInformationOfMeshLoaded();
+  printInformationOfMeshLoaded();
   loadVertices();
+  loadIndices();
   // TODO Implement me!
 
 }
@@ -74,12 +75,26 @@ void MeshViewer::loadVertices()
         positionsPointer[i + 1],
         positionsPointer[i + 2]);
     Vertex currentVertex(currentPosition);
-    m_vertexBufferCPU.push_back(currentVertex);
+    m_vertexBufferOnCPU.push_back(currentVertex);
   }
-  m_vertexBufferCPUSize = m_vertexBufferCPU.size() * sizeof(Vertex);
+  m_vertexBufferOnCPUSizeInBytes = m_vertexBufferOnCPU.size() * sizeof(Vertex);
   std::cout << std::format(
-                   "A total of {} vertices were successfully loaded into the vertex buffer, with a size of {} bytes.",
-                   m_vertexBufferCPU.size(), m_vertexBufferCPUSize)
+                   "A total of {} vertices were successfully loaded into the vertex buffer on CPU, with a size of {} bytes.",
+                   m_vertexBufferOnCPU.size(), m_vertexBufferOnCPUSizeInBytes)
+            << std::endl;
+}
+
+void MeshViewer::loadIndices()
+{
+  CograBinaryMeshFile::IndexType* indicesPointer = m_meshLoaded.getTriangleIndices();
+  for (ui32 i = 0; i < m_meshLoaded.getNumTriangles() * 3; i++)
+  {
+    m_indexBufferOnCPU.push_back(indicesPointer[i]);
+  }
+  m_indexBufferOnCPUSizeInBytes = m_indexBufferOnCPU.size() * sizeof(ui32);
+  std::cout << std::format(
+                   "A total of {} indices were successfully loaded into the index buffer on CPU, with a size of {} bytes.",
+                    m_indexBufferOnCPU.size(), m_indexBufferOnCPUSizeInBytes)
             << std::endl;
 }
 

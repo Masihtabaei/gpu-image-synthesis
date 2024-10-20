@@ -20,6 +20,7 @@ public:
   
   void         printInformationOfMeshLoaded();
   void         loadVertices();
+  void         loadIndices();
   virtual void onDraw();
   virtual void onDrawUI();
 
@@ -27,8 +28,11 @@ private:
   
   // TODO Implement me!
   CograBinaryMeshFile      m_meshLoaded;
-  std::vector<Vertex>      m_vertexBufferCPU;
-  size_t                   m_vertexBufferCPUSize;
+  std::vector<Vertex>      m_vertexBufferOnCPU;
+  std::vector<ui32>        m_indexBufferOnCPU;
+  size_t                   m_vertexBufferOnCPUSizeInBytes;
+  size_t                   m_indexBufferOnCPUSizeInBytes;
+
   gims::ExaminerController m_examinerController;
   f32m4                    m_normalizationTransformation;
 
