@@ -32,12 +32,33 @@ MeshViewer::MeshViewer(const DX12AppConfig config)
 {
   m_examinerController.setTranslationVector(f32v3(0, 0, 3));
   CograBinaryMeshFile cbm("../../../data/bunny.cbm");
+  m_meshLoaded = cbm;
+
+   printInformationOfMeshLoaded();
   // TODO Implement me!
+
 }
 
 MeshViewer::~MeshViewer()
 {
 }
+
+
+void MeshViewer::printInformationOfMeshLoaded()
+{
+  ui32 numberOfAttributes = m_meshLoaded.getNumAttributes();
+  std::cout << "Number of vertices: " << m_meshLoaded.getNumVertices() << std::endl;
+  std::cout << "Number of vertex positions:" << m_meshLoaded.getNumVertices() * 3 << std::endl;
+  std::cout << "Number of triangles: " << m_meshLoaded.getNumTriangles() << std::endl;
+  std::cout << "Number of indices: " << m_meshLoaded.getNumTriangles() * 3 << std::endl;
+  std::cout << "Number of Constants: " << m_meshLoaded.getNumConstants() << std::endl;
+  std::cout << "Number of attributes: " << numberOfAttributes << std::endl;
+  for (ui32 i = 0; i < numberOfAttributes; i++)
+  {
+    std::cout << "Attribute Nr. " << i << ": " << m_meshLoaded.getAttributeName(i) << std::endl;
+  }
+}
+
 
 void MeshViewer::onDraw()
 {
@@ -91,6 +112,7 @@ void MeshViewer::onDrawUI()
   ImGui::End();
   // TODO Implement me!
 }
+
 
 // TODO Implement me!
 // That is a hell lot of code :-)
