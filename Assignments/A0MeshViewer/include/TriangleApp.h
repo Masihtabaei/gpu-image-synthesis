@@ -34,7 +34,7 @@ private:
     f32v3 position;
   };
 
-  // TODO Implement me!
+
   CograBinaryMeshFile      m_meshLoaded;
   std::vector<Vertex>      m_vertexBufferOnCPU;
   std::vector<ui32>        m_indexBufferOnCPU;
@@ -45,10 +45,12 @@ private:
   f32m4                    m_normalizationTransformation;
 
   DX12AppConfig m_appConfig;
+  ComPtr<ID3D12RootSignature> m_rootSignature;
+
   f32v3         calculateCentroidOfMeshLoaded();
   f32m4 getNormalizationTransformation();
 
-
+  void createRootSignature();
 
   UiData m_uiData;
 

@@ -25,6 +25,7 @@ MeshViewer::MeshViewer(const DX12AppConfig config)
   loadVertices();
   loadIndices();
   getNormalizationTransformation();
+  createRootSignature();
   // TODO Implement me!
 
 }
@@ -33,6 +34,19 @@ MeshViewer::~MeshViewer()
 {
 }
 
+void MeshViewer::createRootSignature()
+{
+  CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDescription;
+  rootSignatureDescription.Init(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+  ComPtr<ID3DBlob> rootBlob, errorBlob;
+  D3D12SerializeRootSignature(&rootSignatureDescription, D3D_ROOT_SIGNATURE_VERSION_1, &rootBlob, &errorBlob);
+
+  getDevice()->CreateRootSignature(0, rootBlob->GetBufferPointer(), rootBlob->GetBufferSize(),
+                                   IID_PPV_ARGS(&m_rootSignature));
+
+  std::cout << "The Root signature was created successfully!" << std::endl;
+}
 
 void MeshViewer::printInformationOfMeshLoaded()
 {
@@ -114,6 +128,7 @@ f32m4 MeshViewer::getNormalizationTransformation()
       0.0f, 0.0f, 0.25f, -centroid.z,
       0.0f, 0.0f, 0.0f, 1.0f
   ));
+
 
 std::cout << std::format("The app has a width of {} and a height of {}, resulting in an aspect ratio of {}. The "
                            "corresponding orthographic projection matrix is {}",
