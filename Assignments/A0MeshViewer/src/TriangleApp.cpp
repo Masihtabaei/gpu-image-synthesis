@@ -17,12 +17,17 @@ MeshViewer::MeshViewer(const DX12AppConfig config)
     : DX12App(config)
     , m_examinerController(true)
 {
+  m_uiData.backgroundColor = f32v3(0.25f, 0.25f, 0.25f);
+  m_uiData.backFaceCullingEnabled = false;
+  m_uiData.wireFrameOverlayEnabled = false;
+
   m_appConfig = config;
   m_examinerController.setTranslationVector(f32v3(0, 0, 3));
   CograBinaryMeshFile cbm("../../../data/bunny.cbm");
   loadMesh(cbm);
   createRootSignature();
-  createPipeline();
+  createPipelineForRenderingMeshes();
+  createPipelineForRenderingWireframeOverlay();
   createTriangleMesh();
 }
 
@@ -63,7 +68,7 @@ void MeshViewer::printInformationOfMeshToLoad()
   }
 }
 
-void MeshViewer::createPipeline()
+void MeshViewer::createPipelineForRenderingMeshes()
 {
 
   const auto vertexShader =
@@ -96,8 +101,47 @@ void MeshViewer::createPipeline()
   pipelineStateDescription.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
   pipelineStateDescription.DepthStencilState.StencilEnable  = FALSE;
 
-  throwIfFailed(getDevice()->CreateGraphicsPipelineState(&pipelineStateDescription, IID_PPV_ARGS(&m_pipelineState)));
-  std::cout << "The pipeline was created successfully!" << std::endl;
+  throwIfFailed(getDevice()->CreateGraphicsPipelineState(&pipelineStateDescription, IID_PPV_ARGS(&m_pipelineStateForRenderingMeshes)));
+  std::cout << "The pipeline for rendering meshes was created successfully!" << std::endl;
+}
+
+void MeshViewer::createPipelineForRenderingWireframeOverlay()
+{
+  const auto vertexShader =
+      compileShader(L"../../../Assignments/A0MeshViewer/Shaders/TriangleMesh.hlsl", L"VS_WireFrame_main", L"vs_6_0");
+
+  const auto pixelShader =
+      compileShader(L"../../../Assignments/A0MeshViewer/Shaders/TriangleMesh.hlsl", L"PS_WireFrame_main", L"ps_6_0");
+
+  D3D12_INPUT_ELEMENT_DESC inputElementDescs[] = {
+      {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+      {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,
+       D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}};
+
+  D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineStateDescription = {};
+  pipelineStateDescription.InputLayout                        = {inputElementDescs, _countof(inputElementDescs)};
+  pipelineStateDescription.pRootSignature                     = m_rootSignature.Get();
+  pipelineStateDescription.VS                                 = HLSLCompiler::convert(vertexShader);
+  pipelineStateDescription.PS                                 = HLSLCompiler::convert(pixelShader);
+  pipelineStateDescription.RasterizerState                    = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+  pipelineStateDescription.RasterizerState.FillMode           = D3D12_FILL_MODE_WIREFRAME,   
+  pipelineStateDescription.RasterizerState.CullMode           = D3D12_CULL_MODE_NONE;
+  pipelineStateDescription.BlendState                         = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+  pipelineStateDescription.DepthStencilState                  = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+  pipelineStateDescription.SampleMask                         = UINT_MAX;
+  pipelineStateDescription.PrimitiveTopologyType              = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+  pipelineStateDescription.NumRenderTargets                   = 1;
+  pipelineStateDescription.SampleDesc.Count                   = 1;
+  pipelineStateDescription.RTVFormats[0]                      = getRenderTarget()->GetDesc().Format;
+  pipelineStateDescription.DSVFormat                          = getDepthStencil()->GetDesc().Format;
+  pipelineStateDescription.DepthStencilState.DepthEnable      = FALSE;
+  pipelineStateDescription.DepthStencilState.DepthFunc        = D3D12_COMPARISON_FUNC_ALWAYS;
+  pipelineStateDescription.DepthStencilState.DepthWriteMask   = D3D12_DEPTH_WRITE_MASK_ALL;
+  pipelineStateDescription.DepthStencilState.StencilEnable    = FALSE;
+
+  throwIfFailed(getDevice()->CreateGraphicsPipelineState(&pipelineStateDescription,
+                                                         IID_PPV_ARGS(&m_pipelineStateForRenderingWireframeOverlay)));
+  std::cout << "The pipeline for rendering wireframe overlay was created successfully!" << std::endl;
 }
 
 void MeshViewer::createTriangleMesh()
@@ -278,14 +322,14 @@ void MeshViewer::onDraw()
   commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
   // TODO Implement me!
 
-
-  commandList->ClearRenderTargetView(rtvHandle, m_clearColor, 0, nullptr);
+  float clearColor[4] = {m_uiData.backgroundColor.x, m_uiData.backgroundColor.y, m_uiData.backgroundColor.z, 1.0f};
+  commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
   commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
   commandList->RSSetViewports(1, &getViewport());
   commandList->RSSetScissorRects(1, &getRectScissor());
 
-  commandList->SetPipelineState(m_pipelineState.Get());
+  commandList->SetPipelineState(m_pipelineStateForRenderingMeshes.Get());
   commandList->SetGraphicsRootSignature(m_rootSignature.Get());
   commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
   commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
@@ -293,7 +337,17 @@ void MeshViewer::onDraw()
 
   commandList->DrawIndexedInstanced(m_meshLoaded.getNumTriangles() * 3, 1, 0, 0, 0);
 
+  if (m_uiData.wireFrameOverlayEnabled)
+  {
+    commandList->SetPipelineState(m_pipelineStateForRenderingWireframeOverlay.Get());
+    commandList->SetGraphicsRootSignature(m_rootSignature.Get());
+    commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
+    commandList->IASetIndexBuffer(&m_indexBufferView);
 
+    commandList->DrawIndexedInstanced(m_meshLoaded.getNumTriangles() * 3, 1, 0, 0, 0);
+
+  }
   // TODO Implement me!
 }
 
@@ -306,9 +360,21 @@ void MeshViewer::onDrawUI()
   ImGui::End();
 
   ImGui::Begin("Configurations", nullptr, imGuiFlags);
-  if (ImGui::ColorEdit3("Background Color", m_clearColor))
+  if (ImGui::ColorEdit3("Background Color", &m_uiData.backgroundColor[0]))
   {
-    std::cout << "Background color changed!" << std::endl;
+    std::cout << "Background color has changed!" << std::endl;
+  }
+  if (ImGui::Checkbox("Back-Face Culling", &m_uiData.backFaceCullingEnabled))
+  {
+    std::cout << std::format("Back-face culling mode has changed and is now {}!",
+                             static_cast<bool>(m_uiData.backFaceCullingEnabled) ? "enabled" : "disabled")
+              << std::endl;
+  }
+  if (ImGui::Checkbox("Wireframe Overlay", &m_uiData.wireFrameOverlayEnabled))
+  {
+    std::cout << std::format("Wire frame overlay mode has changed and is now {}!",
+                             static_cast<bool>(m_uiData.wireFrameOverlayEnabled) ? "enabled" : "disabled")
+              << std::endl;
   }
   ImGui::End();
 

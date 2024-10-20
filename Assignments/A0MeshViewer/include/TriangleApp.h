@@ -21,10 +21,11 @@ public:
 
 private:
 
-  struct UiData
+  struct UIData
   {
-    f32v3 m_backgroundColor = f32v3(0.25f, 0.25f, 0.25f);
-    // TODO Implement me!
+    f32v3 backgroundColor;
+    bool  backFaceCullingEnabled;
+    bool  wireFrameOverlayEnabled;
   };
 
   struct Vertex
@@ -49,7 +50,8 @@ private:
 
   DX12AppConfig m_appConfig;
   ComPtr<ID3D12RootSignature> m_rootSignature;
-  ComPtr<ID3D12PipelineState> m_pipelineState;
+  ComPtr<ID3D12PipelineState> m_pipelineStateForRenderingMeshes;
+  ComPtr<ID3D12PipelineState> m_pipelineStateForRenderingWireframeOverlay;
   ComPtr<ID3D12Resource>      m_vertexBuffer;
   D3D12_VERTEX_BUFFER_VIEW    m_vertexBufferView;
   ComPtr<ID3D12Resource>      m_indexBuffer;
@@ -60,9 +62,9 @@ private:
   f32m4 getNormalizationTransformation();
 
   void   createRootSignature();
-  void   createPipeline();
+  void   createPipelineForRenderingMeshes();
+  void   createPipelineForRenderingWireframeOverlay();
   void   createTriangleMesh();
 
-  UiData m_uiData;
-  float m_clearColor[4] = {m_uiData.m_backgroundColor.x, m_uiData.m_backgroundColor.y, m_uiData.m_backgroundColor.z, 1.0f};
+  UIData m_uiData;
 };
