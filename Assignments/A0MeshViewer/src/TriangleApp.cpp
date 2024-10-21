@@ -18,6 +18,7 @@ MeshViewer::MeshViewer(const DX12AppConfig config)
     , m_examinerController(true)
 {
   m_uiData.backgroundColor = f32v3(0.25f, 0.25f, 0.25f);
+  m_uiData.wireframeOverlayColor   = f32v3(0.0f, 0.0f, 0.0f);
   m_uiData.frameWorkWidth          = static_cast<f32>(config.width);
   m_uiData.frameWorkHeight         = static_cast<f32>(config.height);
   m_uiData.frameWorkCenter         = f32v2(m_uiData.frameWorkWidth / 2, m_uiData.frameWorkHeight / 2);
@@ -387,6 +388,19 @@ void MeshViewer::onDrawUI()
     std::cout << std::format("Wire frame overlay mode has changed and is now {}!",
                              static_cast<bool>(m_uiData.wireFrameOverlayEnabled) ? "enabled" : "disabled")
               << std::endl;
+  }
+  f32v3 temporaryWireframeColor = m_uiData.wireframeOverlayColor;
+  if (ImGui::ColorEdit3("Wireframe Overlay Color", &m_uiData.wireframeOverlayColor[0]))
+  {
+    if (m_uiData.wireFrameOverlayEnabled)
+    {
+      std::cout << "Wireframe overlay color has changed successfully!" << std::endl;
+    }
+    else
+    {
+      std::cout << "Wireframe overlay color can not be changed since it is disabled!" << std::endl;
+      m_uiData.wireframeOverlayColor = temporaryWireframeColor;
+    }
   }
   ImGui::End();
 
