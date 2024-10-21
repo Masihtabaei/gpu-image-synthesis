@@ -18,6 +18,9 @@ MeshViewer::MeshViewer(const DX12AppConfig config)
     , m_examinerController(true)
 {
   m_uiData.backgroundColor = f32v3(0.25f, 0.25f, 0.25f);
+  m_uiData.frameWorkWidth          = static_cast<f32>(config.width);
+  m_uiData.frameWorkHeight         = static_cast<f32>(config.height);
+  m_uiData.frameWorkCenter         = f32v2(m_uiData.frameWorkWidth / 2, m_uiData.frameWorkHeight / 2);
   m_uiData.backFaceCullingEnabled = false;
   m_uiData.wireFrameOverlayEnabled = false;
 
@@ -354,9 +357,18 @@ void MeshViewer::onDraw()
 void MeshViewer::onDrawUI()
 {
   const auto imGuiFlags = m_examinerController.active() ? ImGuiWindowFlags_NoInputs : ImGuiWindowFlags_None;
+  m_uiData.frameWorkWidth = f32(ImGui::GetMainViewport()->WorkSize.x);
+  m_uiData.frameWorkHeight = f32(ImGui::GetMainViewport()->WorkSize.y);
+  m_uiData.frameWorkCenter =
+      f32v2(ImGui::GetMainViewport()->GetWorkCenter().x, ImGui::GetMainViewport()->GetWorkCenter().y);
   // TODO Implement me!
   ImGui::Begin("Information", nullptr, imGuiFlags);
   ImGui::Text("Frametime: %f", 1.0f / ImGui::GetIO().Framerate * 1000.0f);
+  ImGui::Text("Frame Width: %.2f", m_uiData.frameWorkWidth);
+  ImGui::Text("Frame Height: %.2f", m_uiData.frameWorkHeight);
+  ImGui::Text("Frame Aspect Ratio: %.2f", (m_uiData.frameWorkWidth) / (m_uiData.frameWorkHeight));
+  ImGui::Text("Frame Center: (%.2f, %.2f)", ImGui::GetMainViewport()->GetWorkCenter().x,
+              ImGui::GetMainViewport()->GetWorkCenter().y);
   ImGui::End();
 
   ImGui::Begin("Configurations", nullptr, imGuiFlags);

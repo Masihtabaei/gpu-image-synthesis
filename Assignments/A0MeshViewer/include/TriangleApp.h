@@ -24,6 +24,9 @@ private:
   struct UIData
   {
     f32v3 backgroundColor;
+    f32 frameWorkWidth;
+    f32   frameWorkHeight;
+    f32v2 frameWorkCenter;
     bool  backFaceCullingEnabled;
     bool  wireFrameOverlayEnabled;
   };
