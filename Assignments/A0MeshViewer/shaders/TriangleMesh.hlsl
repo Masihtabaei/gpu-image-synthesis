@@ -16,7 +16,7 @@ cbuffer PerFrameConstants : register(b0)
 {
   float4x4 mvp;
   //float4x4 mv;
-  //float4   wireFrameColor;
+  float4   wireFrameColor;
   //float4   specularColor_and_Exponent;
   //float4   ambientColor;
   //float4   diffuseColor;
@@ -29,7 +29,6 @@ cbuffer PerFrameConstants : register(b0)
 VertexShaderOutput VS_main(float3 position : POSITION, float3 normal : NORMAL /*, float2 texCoord : TEXCOORD*/)
 {
   VertexShaderOutput output;
-
   output.position          = mul(mvp, float4(position, 1.0f));
   //output.viewSpacePosition = mul(mv, float4(position, 1.0f)).xyz;
   //output.viewSpaceNormal   = mul(mv, float4(normal, 0.0f)).xyz;
@@ -73,13 +72,11 @@ VertexShaderOutput_Wireframe VS_WireFrame_main(float3 position : POSITION , floa
     VertexShaderOutput_Wireframe output;
 
     output.position          = mul(mvp, float4(position, 1.0f));
-    //output.position = float4(position, 1.0f);
     return output;
 }
 
 float4 PS_WireFrame_main(VertexShaderOutput_Wireframe input)
     : SV_TARGET
 {
-    //return wireFrameColor;
-    return float4(0.0f, 0.0f, 0.0f, 1.0f);
+    return wireFrameColor;
 }

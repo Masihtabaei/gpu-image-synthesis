@@ -45,8 +45,9 @@ MeshViewer::~MeshViewer()
 
 void MeshViewer::createRootSignature()
 {
+  const ConstantBuffer   cb {};
   CD3DX12_ROOT_PARAMETER parameter = {};
-  parameter.InitAsConstantBufferView(0, 0, D3D12_SHADER_VISIBILITY_VERTEX);
+  parameter.InitAsConstantBufferView(0, 0, D3D12_SHADER_VISIBILITY_ALL);
 
   CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDescription;
   rootSignatureDescription.Init(1, &parameter, 0, nullptr,
@@ -444,11 +445,14 @@ void MeshViewer::updateConstantBuffers()
 
   cb.mvp = projectionMatrix * V * T;
 
+  cb.wireframeOverlayColor = f32v4(m_uiData.wireframeOverlayColor, 1.0f);
+
   const auto& currentConstantBuffer = m_constantBuffersOnCPU[this->getFrameIndex()];
   void*       p;
   currentConstantBuffer->Map(0, nullptr, &p);
   ::memcpy(p, &cb, sizeof(cb));
   currentConstantBuffer->Unmap(0, nullptr);
+
 }
 
 void MeshViewer::onDraw()

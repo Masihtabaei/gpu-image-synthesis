@@ -43,6 +43,7 @@ private:
   {
     f32m4 mvp;
     //f32m4 modelViewMatrix;
+    f32v4 wireframeOverlayColor;
   };
 
   void loadMesh(const CograBinaryMeshFile& meshToLoad);
