@@ -29,9 +29,11 @@ MeshViewer::MeshViewer(const DX12AppConfig config)
   m_examinerController.setTranslationVector(f32v3(0, 0, 3));
   CograBinaryMeshFile cbm("../../../data/bunny.cbm");
   loadMesh(cbm);
+  //doVerticesMakeSense();
   createRootSignature();
   createPipelineForRenderingMeshes();
   createPipelineForRenderingWireframeOverlay();
+  createConstantBuffers();
   createTriangleMesh();
 }
 
@@ -41,8 +43,13 @@ MeshViewer::~MeshViewer()
 
 void MeshViewer::createRootSignature()
 {
+  CD3DX12_ROOT_PARAMETER parameter = {};
+  parameter.InitAsConstantBufferView(0, 0, D3D12_SHADER_VISIBILITY_VERTEX);
+
+
   CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDescription;
-  rootSignatureDescription.Init(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+  rootSignatureDescription.Init(1, &parameter, 0, nullptr,
+                                D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
   ComPtr<ID3DBlob> rootBlob, errorBlob;
   D3D12SerializeRootSignature(&rootSignatureDescription, D3D_ROOT_SIGNATURE_VERSION_1, &rootBlob, &errorBlob);
@@ -91,7 +98,8 @@ void MeshViewer::createPipelineForRenderingMeshes()
   pipelineStateDescription.VS                               = HLSLCompiler::convert(vertexShader);
   pipelineStateDescription.PS                               = HLSLCompiler::convert(pixelShader);
   pipelineStateDescription.RasterizerState                  = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-  pipelineStateDescription.RasterizerState.CullMode         = D3D12_CULL_MODE_NONE;
+  //pipelineStateDescription.RasterizerState.FrontCounterClockwise = FALSE; 
+  pipelineStateDescription.RasterizerState.CullMode              = D3D12_CULL_MODE_NONE;
   pipelineStateDescription.BlendState                       = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
   pipelineStateDescription.DepthStencilState                = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
   pipelineStateDescription.SampleMask                       = UINT_MAX;
@@ -148,10 +156,40 @@ void MeshViewer::createPipelineForRenderingWireframeOverlay()
   std::cout << "The pipeline for rendering wireframe overlay was created successfully!" << std::endl;
 }
 
+void MeshViewer::doVerticesMakeSense()
+{
+  int count = 0;
+  for (auto& vertex : m_vertexBufferOnCPU)
+  {
+      if (vertex.position.x > 1 || vertex.position.x < -1 || vertex.position.y > 1 || vertex.position.x < -1 ||
+          vertex.position.z > 1 || vertex.position.z < 0)
+      {
+        count++;
+          std::cout << glm::to_string(vertex.position) << std::endl;
+      }
+  }
+
+  std::cout << count << std::endl;
+}
+
 void MeshViewer::createTriangleMesh()
 {
   UploadHelper uploadBuffer(getDevice(), std::max(m_vertexBufferOnCPUSizeInBytes, m_indexBufferOnCPUSizeInBytes));
+  
+  
+  //std::vector<Vertex>   temp = m_vertexBufferOnCPU;
 
+
+
+  //for (ui32 i = 0; i < m_meshLoaded.getNumVertices(); i++)
+  //{
+  //  m_vertexBufferOnCPU.at(i).position = V * projectionMatrix * f32v4(m_vertexBufferOnCPU.at(i).position, 1.0f);
+  //  m_vertexBufferOnCPU.at(i).position.x = (m_vertexBufferOnCPU.at(i).position.x) / 1.5f;
+  //  m_vertexBufferOnCPU.at(i).position.y = (m_vertexBufferOnCPU.at(i).position.y) / 1.5f;
+  //  m_vertexBufferOnCPU.at(i).position.z = (m_vertexBufferOnCPU.at(i).position.z + 2) / 4.0f;
+  //}
+
+  //doVerticesMakeSense();
   const CD3DX12_RESOURCE_DESC vertexBufferDescription = CD3DX12_RESOURCE_DESC::Buffer(m_vertexBufferOnCPUSizeInBytes);
   const CD3DX12_HEAP_PROPERTIES defaultHeapProperties   = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
   getDevice()->CreateCommittedResource(&defaultHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexBufferDescription,
@@ -170,7 +208,10 @@ void MeshViewer::createTriangleMesh()
 
   uploadBuffer.uploadBuffer(m_indexBufferOnCPU.data(), m_indexBuffer, m_indexBufferOnCPUSizeInBytes, getCommandQueue());
 
-  std::cout << "The triangle mesh was created successfully!" << std::endl;
+  // std::cout << "The triangle mesh was created successfully!" << std::endl;
+  //std::cout << "V Matrix:" <<  glm::to_string(V) << std::endl;
+  // m_vertexBufferOnCPU = temp;
+
 }
 
 void MeshViewer::loadMesh(const CograBinaryMeshFile& meshToLoad)
@@ -208,7 +249,6 @@ void MeshViewer::loadVertices()
 
     m_vertexBufferOnCPU.at(i).position = currentPosition;
   }
-
   m_vertexBufferOnCPUSizeInBytes = m_vertexBufferOnCPU.size() * sizeof(Vertex);
   std::cout << std::format(
                    "A total of {} vertices were successfully loaded into the vertex buffer on CPU, with a size of {} bytes.",
@@ -261,40 +301,91 @@ f32v3 MeshViewer::calculateCentroidOfMeshLoaded()
     componentwiseSumOfPositions += vertex.position;
   }
   f32v3 centroid = componentwiseSumOfPositions / static_cast<f32>(m_vertexBufferOnCPU.size());
-  std::cout << std::format("The centroid of the model has the following coordinates: {}", to_string(centroid))
-            << std::endl;
+  // std::cout << std::format("The centroid of the model has the following coordinates: {}", to_string(centroid))
+   //         << std::endl;
 
   return centroid;
+}
+
+glm::mat2x3 MeshViewer::calculateBoundingBox()
+{
+  f32v3 startOfBoundingBox;
+  f32v3 endOfBoundingBox;
+  ;
+
+  for (auto& vertex : m_vertexBufferOnCPU)
+  {
+    startOfBoundingBox = glm::min(startOfBoundingBox, vertex.position);
+    endOfBoundingBox   = glm::max(endOfBoundingBox, vertex.position);
+  }
+  
+  glm::mat2x3 result = glm::mat2x3(startOfBoundingBox, endOfBoundingBox);
+
+  return result;
 }
 
 f32m4 MeshViewer::getNormalizationTransformation()
 {
   f32v3 centroid       = calculateCentroidOfMeshLoaded();
-  ui32 appWidth       = m_appConfig.width;
-  ui32 appHeight   = m_appConfig.height;
-  f32  aspectRatio    = appWidth / static_cast<f32>(appHeight);
+  glm::highp_mat4 translationMatrix = glm::translate(glm::mat4(1.0f), -centroid);
 
 
-  f32m4 orthographicProjectionMatrix = transpose(f32m4(
-      0.5f, 0.0f, 0.0f, -centroid.x,
-      0.0f, aspectRatio / 2, 0.0f, -centroid.y,
-      0.0f, 0.0f, 0.5f,0.f,
-      0.0f, 0.0f, 0.0f, 1.0f
-  ));
+  glm::mat2x3 boundingBox = calculateBoundingBox();
+  f32v3       axisLengths = boundingBox[1] - boundingBox[0];
+  f32         longestAxis = glm::max(axisLengths.x, glm::max(axisLengths.y, axisLengths.z));
+  f32v3           scalingFactors = axisLengths / (longestAxis);
+  glm::highp_mat4 scalingMatrix  = glm::scale(glm::mat4(1.0f), scalingFactors);
 
+  glm::highp_mat4 normalizationMatrix = scalingMatrix * translationMatrix;
+  return normalizationMatrix;
+}
 
-std::cout << std::format("The app has a width of {} and a height of {}, resulting in an aspect ratio of {}. The "
-                           "corresponding orthographic projection matrix is {}",
-                           appWidth, appHeight, aspectRatio,
-                           glm::to_string(glm::transpose(orthographicProjectionMatrix)))
-            << std::endl;
-
-   return orthographicProjectionMatrix;
+void MeshViewer::createConstantBuffers()
+{
+  const ConstantBuffer cb = {};
+  ui32                 numberOfFrames = getDX12AppConfig().frameCount;
+  m_constantBuffersOnCPU.resize(numberOfFrames);
+  for (ui32 i = 0; i < numberOfFrames; i++)
+  {
+    static const CD3DX12_HEAP_PROPERTIES uploadHeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+    static const CD3DX12_RESOURCE_DESC   constantBufferDescriptor   = CD3DX12_RESOURCE_DESC::Buffer(sizeof(ConstantBuffer));
+    getDevice()->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &constantBufferDescriptor,
+                                         D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
+                                         IID_PPV_ARGS(&m_constantBuffersOnCPU[i]));
+  }
 }
 
 
+void MeshViewer::updateConstantBuffers()
+{
+  ConstantBuffer cb;
+
+  constexpr float fov       = glm::radians(45.0f); // More standard FOV
+  float width     = m_uiData.frameWorkWidth;
+  float height    = m_uiData.frameWorkHeight;
+  float nearPlane = 0.0f;  // Slightly further near plane to avoid distortion
+  float farPlane  = 1.01f; // Far enough to capture distant objects
+
+  glm::mat4 projectionMatrix = glm::perspectiveFovLH_ZO<f32>(fov, width, height, nearPlane, farPlane);
+
+  auto T = getNormalizationTransformation();
+
+  auto           V = m_examinerController.getTransformationMatrix();
+
+  cb.mvp = projectionMatrix * V * T;
+
+  const auto& currentConstantBuffer = m_constantBuffersOnCPU[this->getFrameIndex()];
+  void*       p;
+  currentConstantBuffer->Map(0, nullptr, &p);
+  ::memcpy(p, &cb, sizeof(cb));
+  currentConstantBuffer->Unmap(0, nullptr);
+}
+
 void MeshViewer::onDraw()
 {
+
+    updateConstantBuffers();
+
 
   if (!ImGui::GetIO().WantCaptureMouse)
   {
@@ -316,7 +407,8 @@ void MeshViewer::onDraw()
   // TODO Implement me!
   // Use this to get the transformation Matrix.
   // Of course, skip the (void). That is just to prevent warning, sinces I am not using it here (but you will have to!)
-  (void)m_examinerController.getTransformationMatrix();
+  //(void)m_examinerController.getTransformationMatrix();
+  
 
   const auto commandList = getCommandList();
   const auto rtvHandle   = getRTVHandle();
@@ -333,11 +425,17 @@ void MeshViewer::onDraw()
   commandList->RSSetViewports(1, &getViewport());
   commandList->RSSetScissorRects(1, &getRectScissor());
 
+
   commandList->SetPipelineState(m_pipelineStateForRenderingMeshes.Get());
   commandList->SetGraphicsRootSignature(m_rootSignature.Get());
   commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+  commandList->SetGraphicsRootConstantBufferView(0, m_constantBuffersOnCPU[getFrameIndex()]->GetGPUVirtualAddress());
+
+
   commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
   commandList->IASetIndexBuffer(&m_indexBufferView);
+
 
   commandList->DrawIndexedInstanced(m_meshLoaded.getNumTriangles() * 3, 1, 0, 0, 0);
 
@@ -346,6 +444,9 @@ void MeshViewer::onDraw()
     commandList->SetPipelineState(m_pipelineStateForRenderingWireframeOverlay.Get());
     commandList->SetGraphicsRootSignature(m_rootSignature.Get());
     commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    commandList->SetGraphicsRootConstantBufferView(0, m_constantBuffersOnCPU[getFrameIndex()]->GetGPUVirtualAddress());
+
     commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
     commandList->IASetIndexBuffer(&m_indexBufferView);
 

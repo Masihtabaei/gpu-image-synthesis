@@ -38,6 +38,13 @@ private:
     f32v3 normal;
   };
 
+
+  struct ConstantBuffer
+  {
+    f32m4 mvp;
+    //f32m4 modelViewMatrix;
+  };
+
   void loadMesh(const CograBinaryMeshFile& meshToLoad);
   void loadVertices();
   void loadIndices();
@@ -53,15 +60,19 @@ private:
   f32m4                    m_normalizationTransformation;
 
   DX12AppConfig m_appConfig;
+
   ComPtr<ID3D12RootSignature> m_rootSignature;
   ComPtr<ID3D12PipelineState> m_pipelineStateForRenderingMeshes;
   ComPtr<ID3D12PipelineState> m_pipelineStateForRenderingWireframeOverlay;
+
   ComPtr<ID3D12Resource>      m_vertexBuffer;
   D3D12_VERTEX_BUFFER_VIEW    m_vertexBufferView;
   ComPtr<ID3D12Resource>      m_indexBuffer;
   D3D12_INDEX_BUFFER_VIEW     m_indexBufferView;
 
+  std::vector<ComPtr<ID3D12Resource>> m_constantBuffersOnCPU;
 
+  glm::mat2x3 calculateBoundingBox();
   f32v3 calculateCentroidOfMeshLoaded();
   f32m4 getNormalizationTransformation();
 
@@ -69,6 +80,9 @@ private:
   void   createPipelineForRenderingMeshes();
   void   createPipelineForRenderingWireframeOverlay();
   void   createTriangleMesh();
+  void   doVerticesMakeSense();
+  void   createConstantBuffers();
+  void   updateConstantBuffers();
 
   UIData m_uiData;
 };

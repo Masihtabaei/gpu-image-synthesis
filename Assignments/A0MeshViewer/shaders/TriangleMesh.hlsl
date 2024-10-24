@@ -1,9 +1,9 @@
 struct VertexShaderOutput
 {
   float4 position : SV_POSITION;
-  float3 viewSpacePosition : POSITION;
-  float3 viewSpaceNormal : NORMAL;
-  float2 texCoord : TEXCOORD;
+  //float3 viewSpacePosition : POSITION;
+  //float3 viewSpaceNormal : NORMAL;
+  //float2 texCoord : TEXCOORD;
 };
 
 struct VertexShaderOutput_Wireframe
@@ -15,26 +15,26 @@ struct VertexShaderOutput_Wireframe
 cbuffer PerFrameConstants : register(b0)
 {
   float4x4 mvp;
-  float4x4 mv;
-  float4   specularColor_and_Exponent;
-  float4   ambientColor;
-  float4   diffuseColor;
-  float4   wireFrameColor;
-  uint1    flags;
+  //float4x4 mv;
+  //float4   specularColor_and_Exponent;
+  //float4   ambientColor;
+  //float4   diffuseColor;
+  //float4   wireFrameColor;
+  //uint1    flags;
 }
 
-Texture2D<float3> g_texture : register(t0);
-SamplerState      g_sampler : register(s0);
+//Texture2D<float3> g_texture : register(t0);
+//SamplerState      g_sampler : register(s0);
 
 VertexShaderOutput VS_main(float3 position : POSITION, float3 normal : NORMAL /*, float2 texCoord : TEXCOORD*/)
 {
   VertexShaderOutput output;
 
-  //output.position          = mul(mvp, float4(position, 1.0f));
+  output.position          = mul(mvp, float4(position, 1.0f));
   //output.viewSpacePosition = mul(mv, float4(position, 1.0f)).xyz;
   //output.viewSpaceNormal   = mul(mv, float4(normal, 0.0f)).xyz;
   //output.texCoord          = texCoord;
-  output.position = float4(position, 1.0f);
+  //output.position = float4(position, 1.0f);
   return output;
 }
 
@@ -72,8 +72,8 @@ VertexShaderOutput_Wireframe VS_WireFrame_main(float3 position : POSITION , floa
 {
     VertexShaderOutput_Wireframe output;
 
-    //output.position          = mul(mvp, float4(position, 1.0f));
-    output.position = float4(position, 1.0f);
+    output.position          = mul(mvp, float4(position, 1.0f));
+    //output.position = float4(position, 1.0f);
     return output;
 }
 
