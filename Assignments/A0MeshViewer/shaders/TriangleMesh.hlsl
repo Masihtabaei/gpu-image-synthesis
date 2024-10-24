@@ -16,10 +16,10 @@ cbuffer PerFrameConstants : register(b0)
 {
   float4x4 mvp;
   //float4x4 mv;
+  //float4   wireFrameColor;
   //float4   specularColor_and_Exponent;
   //float4   ambientColor;
   //float4   diffuseColor;
-  //float4   wireFrameColor;
   //uint1    flags;
 }
 

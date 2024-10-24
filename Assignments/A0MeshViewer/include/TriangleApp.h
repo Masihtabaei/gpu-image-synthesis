@@ -64,6 +64,8 @@ private:
   ComPtr<ID3D12RootSignature> m_rootSignature;
   ComPtr<ID3D12PipelineState> m_pipelineStateForRenderingMeshes;
   ComPtr<ID3D12PipelineState> m_pipelineStateForRenderingWireframeOverlay;
+  ComPtr<ID3D12PipelineState> m_pipelineStateForRenderingWithBackfaceCulling;
+  ComPtr<ID3D12PipelineState> m_pipelineStateForRenderingWireframeOverlayWithBackfaceCulling;
 
   ComPtr<ID3D12Resource>      m_vertexBuffer;
   D3D12_VERTEX_BUFFER_VIEW    m_vertexBufferView;
@@ -79,6 +81,8 @@ private:
   void   createRootSignature();
   void   createPipelineForRenderingMeshes();
   void   createPipelineForRenderingWireframeOverlay();
+  void   createPipelineforRenderingWithBackfaceCulling();
+  void   createPipelineForRenderingWireframeOverlayWithBackfaceCulling();
   void   createTriangleMesh();
   void   doVerticesMakeSense();
   void   createConstantBuffers();

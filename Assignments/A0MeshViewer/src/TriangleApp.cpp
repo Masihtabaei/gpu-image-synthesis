@@ -1,5 +1,6 @@
 #include "TriangleApp.h"
 #include <d3dx12/d3dx12.h>
+#include <format>
 #include <gimslib/contrib/stb/stb_image.h>
 #include <gimslib/d3d/DX12Util.hpp>
 #include <gimslib/d3d/UploadHelper.hpp>
@@ -8,7 +9,6 @@
 #include <gimslib/sys/Event.hpp>
 #include <imgui.h>
 #include <iostream>
-#include <format>
 #include <vector>
 
 using namespace gims;
@@ -17,22 +17,24 @@ MeshViewer::MeshViewer(const DX12AppConfig config)
     : DX12App(config)
     , m_examinerController(true)
 {
-  m_uiData.backgroundColor = f32v3(0.25f, 0.25f, 0.25f);
+  m_uiData.backgroundColor         = f32v3(0.25f, 0.25f, 0.25f);
   m_uiData.wireframeOverlayColor   = f32v3(0.0f, 0.0f, 0.0f);
   m_uiData.frameWorkWidth          = static_cast<f32>(config.width);
   m_uiData.frameWorkHeight         = static_cast<f32>(config.height);
   m_uiData.frameWorkCenter         = f32v2(m_uiData.frameWorkWidth / 2, m_uiData.frameWorkHeight / 2);
-  m_uiData.backFaceCullingEnabled = false;
+  m_uiData.backFaceCullingEnabled  = false;
   m_uiData.wireFrameOverlayEnabled = false;
 
   m_appConfig = config;
   m_examinerController.setTranslationVector(f32v3(0, 0, 3));
   CograBinaryMeshFile cbm("../../../data/bunny.cbm");
   loadMesh(cbm);
-  //doVerticesMakeSense();
+  // doVerticesMakeSense();
   createRootSignature();
   createPipelineForRenderingMeshes();
   createPipelineForRenderingWireframeOverlay();
+  createPipelineforRenderingWithBackfaceCulling();
+  createPipelineForRenderingWireframeOverlayWithBackfaceCulling();
   createConstantBuffers();
   createTriangleMesh();
 }
@@ -45,7 +47,6 @@ void MeshViewer::createRootSignature()
 {
   CD3DX12_ROOT_PARAMETER parameter = {};
   parameter.InitAsConstantBufferView(0, 0, D3D12_SHADER_VISIBILITY_VERTEX);
-
 
   CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDescription;
   rootSignatureDescription.Init(1, &parameter, 0, nullptr,
@@ -63,16 +64,15 @@ void MeshViewer::createRootSignature()
 void MeshViewer::printInformationOfMeshToLoad()
 {
   ui32 numberOfAttributes = m_meshLoaded.getNumAttributes();
-  std::cout << std::format("The mesh to load consists of {} vertices, resulting in {} position coordinates.\n"
-                           "It also contains {} triangles, with a total of {} indices.\n"
-                           "Additionally, there are {} constants and {}",
-                           m_meshLoaded.getNumVertices(), m_meshLoaded.getNumVertices() * 3,
-                           m_meshLoaded.getNumTriangles(), m_meshLoaded.getNumTriangles() * 3,
-                           m_meshLoaded.getNumConstants(),
-                           numberOfAttributes == 0 
-      ? "no attribute available!" 
-      : std::format("following {} attributes available:", numberOfAttributes))
-      << std::endl;
+  std::cout << std::format(
+                   "The mesh to load consists of {} vertices, resulting in {} position coordinates.\n"
+                   "It also contains {} triangles, with a total of {} indices.\n"
+                   "Additionally, there are {} constants and {}",
+                   m_meshLoaded.getNumVertices(), m_meshLoaded.getNumVertices() * 3, m_meshLoaded.getNumTriangles(),
+                   m_meshLoaded.getNumTriangles() * 3, m_meshLoaded.getNumConstants(),
+                   numberOfAttributes == 0 ? "no attribute available!"
+                                           : std::format("following {} attributes available:", numberOfAttributes))
+            << std::endl;
   for (ui32 i = 0; i < numberOfAttributes; i++)
   {
     std::cout << std::format("Attribute Nr. {}: ", i + 1) << m_meshLoaded.getAttributeName(i) << std::endl;
@@ -90,16 +90,17 @@ void MeshViewer::createPipelineForRenderingMeshes()
 
   D3D12_INPUT_ELEMENT_DESC inputElementDescs[] = {
       {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-      {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}};
+      {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,
+       D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}};
 
   D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineStateDescription = {};
-  pipelineStateDescription.InputLayout                      = {inputElementDescs, _countof(inputElementDescs)};
-  pipelineStateDescription.pRootSignature                   = m_rootSignature.Get();
-  pipelineStateDescription.VS                               = HLSLCompiler::convert(vertexShader);
-  pipelineStateDescription.PS                               = HLSLCompiler::convert(pixelShader);
-  pipelineStateDescription.RasterizerState                  = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-  //pipelineStateDescription.RasterizerState.FrontCounterClockwise = FALSE; 
-  pipelineStateDescription.RasterizerState.CullMode              = D3D12_CULL_MODE_NONE;
+  pipelineStateDescription.InputLayout                        = {inputElementDescs, _countof(inputElementDescs)};
+  pipelineStateDescription.pRootSignature                     = m_rootSignature.Get();
+  pipelineStateDescription.VS                                 = HLSLCompiler::convert(vertexShader);
+  pipelineStateDescription.PS                                 = HLSLCompiler::convert(pixelShader);
+  pipelineStateDescription.RasterizerState                    = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+  // pipelineStateDescription.RasterizerState.FrontCounterClockwise = FALSE;
+  pipelineStateDescription.RasterizerState.CullMode         = D3D12_CULL_MODE_NONE;
   pipelineStateDescription.BlendState                       = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
   pipelineStateDescription.DepthStencilState                = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
   pipelineStateDescription.SampleMask                       = UINT_MAX;
@@ -113,7 +114,8 @@ void MeshViewer::createPipelineForRenderingMeshes()
   pipelineStateDescription.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
   pipelineStateDescription.DepthStencilState.StencilEnable  = FALSE;
 
-  throwIfFailed(getDevice()->CreateGraphicsPipelineState(&pipelineStateDescription, IID_PPV_ARGS(&m_pipelineStateForRenderingMeshes)));
+  throwIfFailed(getDevice()->CreateGraphicsPipelineState(&pipelineStateDescription,
+                                                         IID_PPV_ARGS(&m_pipelineStateForRenderingMeshes)));
   std::cout << "The pipeline for rendering meshes was created successfully!" << std::endl;
 }
 
@@ -136,7 +138,7 @@ void MeshViewer::createPipelineForRenderingWireframeOverlay()
   pipelineStateDescription.VS                                 = HLSLCompiler::convert(vertexShader);
   pipelineStateDescription.PS                                 = HLSLCompiler::convert(pixelShader);
   pipelineStateDescription.RasterizerState                    = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-  pipelineStateDescription.RasterizerState.FillMode           = D3D12_FILL_MODE_WIREFRAME,   
+  pipelineStateDescription.RasterizerState.FillMode           = D3D12_FILL_MODE_WIREFRAME,
   pipelineStateDescription.RasterizerState.CullMode           = D3D12_CULL_MODE_NONE;
   pipelineStateDescription.BlendState                         = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
   pipelineStateDescription.DepthStencilState                  = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
@@ -156,17 +158,95 @@ void MeshViewer::createPipelineForRenderingWireframeOverlay()
   std::cout << "The pipeline for rendering wireframe overlay was created successfully!" << std::endl;
 }
 
+void MeshViewer::createPipelineforRenderingWithBackfaceCulling()
+{
+  const auto vertexShader =
+      compileShader(L"../../../Assignments/A0MeshViewer/Shaders/TriangleMesh.hlsl", L"VS_main", L"vs_6_0");
+
+  const auto pixelShader =
+      compileShader(L"../../../Assignments/A0MeshViewer/Shaders/TriangleMesh.hlsl", L"PS_main", L"ps_6_0");
+
+  D3D12_INPUT_ELEMENT_DESC inputElementDescs[] = {
+      {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+      {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,
+       D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}};
+
+  D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineStateDescription = {};
+  pipelineStateDescription.InputLayout                        = {inputElementDescs, _countof(inputElementDescs)};
+  pipelineStateDescription.pRootSignature                     = m_rootSignature.Get();
+  pipelineStateDescription.VS                                 = HLSLCompiler::convert(vertexShader);
+  pipelineStateDescription.PS                                 = HLSLCompiler::convert(pixelShader);
+  pipelineStateDescription.RasterizerState                    = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+  pipelineStateDescription.RasterizerState.CullMode           = D3D12_CULL_MODE_BACK;
+  pipelineStateDescription.BlendState                         = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+  pipelineStateDescription.DepthStencilState                  = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+  pipelineStateDescription.SampleMask                         = UINT_MAX;
+  pipelineStateDescription.PrimitiveTopologyType              = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+  pipelineStateDescription.NumRenderTargets                   = 1;
+  pipelineStateDescription.SampleDesc.Count                   = 1;
+  pipelineStateDescription.RTVFormats[0]                      = getRenderTarget()->GetDesc().Format;
+  pipelineStateDescription.DSVFormat                          = getDepthStencil()->GetDesc().Format;
+  pipelineStateDescription.DepthStencilState.DepthEnable      = FALSE;
+  pipelineStateDescription.DepthStencilState.DepthFunc        = D3D12_COMPARISON_FUNC_ALWAYS;
+  pipelineStateDescription.DepthStencilState.DepthWriteMask   = D3D12_DEPTH_WRITE_MASK_ALL;
+  pipelineStateDescription.DepthStencilState.StencilEnable    = FALSE;
+
+  throwIfFailed(getDevice()->CreateGraphicsPipelineState(
+      &pipelineStateDescription, IID_PPV_ARGS(&m_pipelineStateForRenderingWithBackfaceCulling)));
+  std::cout << "The pipeline for rendering meshes with backface-culling was created successfully!" << std::endl;
+}
+
+void MeshViewer::createPipelineForRenderingWireframeOverlayWithBackfaceCulling()
+{
+  const auto vertexShader =
+      compileShader(L"../../../Assignments/A0MeshViewer/Shaders/TriangleMesh.hlsl", L"VS_WireFrame_main", L"vs_6_0");
+
+  const auto pixelShader =
+      compileShader(L"../../../Assignments/A0MeshViewer/Shaders/TriangleMesh.hlsl", L"PS_WireFrame_main", L"ps_6_0");
+
+  D3D12_INPUT_ELEMENT_DESC inputElementDescs[] = {
+      {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+      {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,
+       D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}};
+
+  D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineStateDescription = {};
+  pipelineStateDescription.InputLayout                        = {inputElementDescs, _countof(inputElementDescs)};
+  pipelineStateDescription.pRootSignature                     = m_rootSignature.Get();
+  pipelineStateDescription.VS                                 = HLSLCompiler::convert(vertexShader);
+  pipelineStateDescription.PS                                 = HLSLCompiler::convert(pixelShader);
+  pipelineStateDescription.RasterizerState                    = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+  pipelineStateDescription.RasterizerState.FillMode           = D3D12_FILL_MODE_WIREFRAME;
+  pipelineStateDescription.RasterizerState.CullMode           = D3D12_CULL_MODE_BACK;
+  pipelineStateDescription.BlendState                         = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+  pipelineStateDescription.DepthStencilState                  = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+  pipelineStateDescription.SampleMask                         = UINT_MAX;
+  pipelineStateDescription.PrimitiveTopologyType              = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+  pipelineStateDescription.NumRenderTargets                   = 1;
+  pipelineStateDescription.SampleDesc.Count                   = 1;
+  pipelineStateDescription.RTVFormats[0]                      = getRenderTarget()->GetDesc().Format;
+  pipelineStateDescription.DSVFormat                          = getDepthStencil()->GetDesc().Format;
+  pipelineStateDescription.DepthStencilState.DepthEnable      = FALSE;
+  pipelineStateDescription.DepthStencilState.DepthFunc        = D3D12_COMPARISON_FUNC_ALWAYS;
+  pipelineStateDescription.DepthStencilState.DepthWriteMask   = D3D12_DEPTH_WRITE_MASK_ALL;
+  pipelineStateDescription.DepthStencilState.StencilEnable    = FALSE;
+
+  throwIfFailed(getDevice()->CreateGraphicsPipelineState(
+      &pipelineStateDescription, IID_PPV_ARGS(&m_pipelineStateForRenderingWireframeOverlayWithBackfaceCulling)));
+  std::cout << "The pipeline for rendering wireframe overlay with backface-culling was created successfully!"
+            << std::endl;
+}
+
 void MeshViewer::doVerticesMakeSense()
 {
   int count = 0;
   for (auto& vertex : m_vertexBufferOnCPU)
   {
-      if (vertex.position.x > 1 || vertex.position.x < -1 || vertex.position.y > 1 || vertex.position.x < -1 ||
-          vertex.position.z > 1 || vertex.position.z < 0)
-      {
-        count++;
-          std::cout << glm::to_string(vertex.position) << std::endl;
-      }
+    if (vertex.position.x > 1 || vertex.position.x < -1 || vertex.position.y > 1 || vertex.position.x < -1 ||
+        vertex.position.z > 1 || vertex.position.z < 0)
+    {
+      count++;
+      std::cout << glm::to_string(vertex.position) << std::endl;
+    }
   }
 
   std::cout << count << std::endl;
@@ -175,29 +255,27 @@ void MeshViewer::doVerticesMakeSense()
 void MeshViewer::createTriangleMesh()
 {
   UploadHelper uploadBuffer(getDevice(), std::max(m_vertexBufferOnCPUSizeInBytes, m_indexBufferOnCPUSizeInBytes));
-  
-  
-  //std::vector<Vertex>   temp = m_vertexBufferOnCPU;
 
+  // std::vector<Vertex>   temp = m_vertexBufferOnCPU;
 
-
-  //for (ui32 i = 0; i < m_meshLoaded.getNumVertices(); i++)
+  // for (ui32 i = 0; i < m_meshLoaded.getNumVertices(); i++)
   //{
-  //  m_vertexBufferOnCPU.at(i).position = V * projectionMatrix * f32v4(m_vertexBufferOnCPU.at(i).position, 1.0f);
-  //  m_vertexBufferOnCPU.at(i).position.x = (m_vertexBufferOnCPU.at(i).position.x) / 1.5f;
-  //  m_vertexBufferOnCPU.at(i).position.y = (m_vertexBufferOnCPU.at(i).position.y) / 1.5f;
-  //  m_vertexBufferOnCPU.at(i).position.z = (m_vertexBufferOnCPU.at(i).position.z + 2) / 4.0f;
-  //}
+  //   m_vertexBufferOnCPU.at(i).position = V * projectionMatrix * f32v4(m_vertexBufferOnCPU.at(i).position, 1.0f);
+  //   m_vertexBufferOnCPU.at(i).position.x = (m_vertexBufferOnCPU.at(i).position.x) / 1.5f;
+  //   m_vertexBufferOnCPU.at(i).position.y = (m_vertexBufferOnCPU.at(i).position.y) / 1.5f;
+  //   m_vertexBufferOnCPU.at(i).position.z = (m_vertexBufferOnCPU.at(i).position.z + 2) / 4.0f;
+  // }
 
-  //doVerticesMakeSense();
-  const CD3DX12_RESOURCE_DESC vertexBufferDescription = CD3DX12_RESOURCE_DESC::Buffer(m_vertexBufferOnCPUSizeInBytes);
+  // doVerticesMakeSense();
+  const CD3DX12_RESOURCE_DESC   vertexBufferDescription = CD3DX12_RESOURCE_DESC::Buffer(m_vertexBufferOnCPUSizeInBytes);
   const CD3DX12_HEAP_PROPERTIES defaultHeapProperties   = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
   getDevice()->CreateCommittedResource(&defaultHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexBufferDescription,
                                        D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&m_vertexBuffer));
   m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
   m_vertexBufferView.SizeInBytes    = static_cast<ui32>(m_vertexBufferOnCPUSizeInBytes);
   m_vertexBufferView.StrideInBytes  = sizeof(Vertex);
-  uploadBuffer.uploadBuffer(m_vertexBufferOnCPU.data(), m_vertexBuffer, m_vertexBufferOnCPUSizeInBytes, getCommandQueue());
+  uploadBuffer.uploadBuffer(m_vertexBufferOnCPU.data(), m_vertexBuffer, m_vertexBufferOnCPUSizeInBytes,
+                            getCommandQueue());
 
   const CD3DX12_RESOURCE_DESC indexBufferDescription = CD3DX12_RESOURCE_DESC::Buffer(m_indexBufferOnCPUSizeInBytes);
   getDevice()->CreateCommittedResource(&defaultHeapProperties, D3D12_HEAP_FLAG_NONE, &indexBufferDescription,
@@ -209,9 +287,8 @@ void MeshViewer::createTriangleMesh()
   uploadBuffer.uploadBuffer(m_indexBufferOnCPU.data(), m_indexBuffer, m_indexBufferOnCPUSizeInBytes, getCommandQueue());
 
   // std::cout << "The triangle mesh was created successfully!" << std::endl;
-  //std::cout << "V Matrix:" <<  glm::to_string(V) << std::endl;
+  // std::cout << "V Matrix:" <<  glm::to_string(V) << std::endl;
   // m_vertexBufferOnCPU = temp;
-
 }
 
 void MeshViewer::loadMesh(const CograBinaryMeshFile& meshToLoad)
@@ -242,18 +319,16 @@ void MeshViewer::loadVertices()
   CograBinaryMeshFile::FloatType* positionsPointer = m_meshLoaded.getPositionsPtr();
   for (ui32 i = 0; i < m_meshLoaded.getNumVertices(); i++)
   {
-    f32v3  currentPosition(
-        positionsPointer[i * 3],
-        positionsPointer[i * 3 + 1],
-        positionsPointer[i * 3 + 2]);
+    f32v3 currentPosition(positionsPointer[i * 3], positionsPointer[i * 3 + 1], positionsPointer[i * 3 + 2]);
 
     m_vertexBufferOnCPU.at(i).position = currentPosition;
   }
   m_vertexBufferOnCPUSizeInBytes = m_vertexBufferOnCPU.size() * sizeof(Vertex);
-  std::cout << std::format(
-                   "A total of {} vertices were successfully loaded into the vertex buffer on CPU, with a size of {} bytes.",
-                   m_vertexBufferOnCPU.size(), m_vertexBufferOnCPUSizeInBytes)
-            << std::endl;
+  std::cout
+      << std::format(
+             "A total of {} vertices were successfully loaded into the vertex buffer on CPU, with a size of {} bytes.",
+             m_vertexBufferOnCPU.size(), m_vertexBufferOnCPUSizeInBytes)
+      << std::endl;
 }
 
 void MeshViewer::loadIndices()
@@ -264,23 +339,20 @@ void MeshViewer::loadIndices()
     m_indexBufferOnCPU.at(i) = indicesPointer[i];
   }
   m_indexBufferOnCPUSizeInBytes = m_indexBufferOnCPU.size() * sizeof(ui32);
-  std::cout << std::format(
-                   "A total of {} indices were successfully loaded into the index buffer on CPU, with a size of {} bytes.",
-                    m_indexBufferOnCPU.size(), m_indexBufferOnCPUSizeInBytes)
-            << std::endl;
+  std::cout
+      << std::format(
+             "A total of {} indices were successfully loaded into the index buffer on CPU, with a size of {} bytes.",
+             m_indexBufferOnCPU.size(), m_indexBufferOnCPUSizeInBytes)
+      << std::endl;
 }
 
 void MeshViewer::loadNormals()
 {
-  void* normalsVoidPointer = m_meshLoaded.getAttributePtr(0);
-  CograBinaryMeshFile::FloatType* normalsPointer =
-  static_cast<CograBinaryMeshFile::FloatType*>(normalsVoidPointer);
+  void*                           normalsVoidPointer = m_meshLoaded.getAttributePtr(0);
+  CograBinaryMeshFile::FloatType* normalsPointer     = static_cast<CograBinaryMeshFile::FloatType*>(normalsVoidPointer);
   for (ui32 i = 0; i < m_meshLoaded.getNumVertices(); i++)
   {
-    f32v3 currentNormal(
-        normalsPointer[i * 3],
-        normalsPointer[i * 3 + 1],
-        normalsPointer[i * 3 + 2]);
+    f32v3 currentNormal(normalsPointer[i * 3], normalsPointer[i * 3 + 1], normalsPointer[i * 3 + 2]);
 
     m_vertexBufferOnCPU.at(i).normal = currentNormal;
   }
@@ -302,7 +374,7 @@ f32v3 MeshViewer::calculateCentroidOfMeshLoaded()
   }
   f32v3 centroid = componentwiseSumOfPositions / static_cast<f32>(m_vertexBufferOnCPU.size());
   // std::cout << std::format("The centroid of the model has the following coordinates: {}", to_string(centroid))
-   //         << std::endl;
+  //         << std::endl;
 
   return centroid;
 }
@@ -318,7 +390,7 @@ glm::mat2x3 MeshViewer::calculateBoundingBox()
     startOfBoundingBox = glm::min(startOfBoundingBox, vertex.position);
     endOfBoundingBox   = glm::max(endOfBoundingBox, vertex.position);
   }
-  
+
   glm::mat2x3 result = glm::mat2x3(startOfBoundingBox, endOfBoundingBox);
 
   return result;
@@ -326,13 +398,12 @@ glm::mat2x3 MeshViewer::calculateBoundingBox()
 
 f32m4 MeshViewer::getNormalizationTransformation()
 {
-  f32v3 centroid       = calculateCentroidOfMeshLoaded();
+  f32v3           centroid          = calculateCentroidOfMeshLoaded();
   glm::highp_mat4 translationMatrix = glm::translate(glm::mat4(1.0f), -centroid);
 
-
-  glm::mat2x3 boundingBox = calculateBoundingBox();
-  f32v3       axisLengths = boundingBox[1] - boundingBox[0];
-  f32         longestAxis = glm::max(axisLengths.x, glm::max(axisLengths.y, axisLengths.z));
+  glm::mat2x3     boundingBox    = calculateBoundingBox();
+  f32v3           axisLengths    = boundingBox[1] - boundingBox[0];
+  f32             longestAxis    = glm::max(axisLengths.x, glm::max(axisLengths.y, axisLengths.z));
   f32v3           scalingFactors = axisLengths / (longestAxis);
   glm::highp_mat4 scalingMatrix  = glm::scale(glm::mat4(1.0f), scalingFactors);
 
@@ -342,35 +413,34 @@ f32m4 MeshViewer::getNormalizationTransformation()
 
 void MeshViewer::createConstantBuffers()
 {
-  const ConstantBuffer cb = {};
+  const ConstantBuffer cb             = {};
   ui32                 numberOfFrames = getDX12AppConfig().frameCount;
   m_constantBuffersOnCPU.resize(numberOfFrames);
   for (ui32 i = 0; i < numberOfFrames; i++)
   {
-    static const CD3DX12_HEAP_PROPERTIES uploadHeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-    static const CD3DX12_RESOURCE_DESC   constantBufferDescriptor   = CD3DX12_RESOURCE_DESC::Buffer(sizeof(ConstantBuffer));
+    static const CD3DX12_HEAP_PROPERTIES uploadHeapProperties   = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+    static const CD3DX12_RESOURCE_DESC constantBufferDescriptor = CD3DX12_RESOURCE_DESC::Buffer(sizeof(ConstantBuffer));
     getDevice()->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &constantBufferDescriptor,
                                          D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
                                          IID_PPV_ARGS(&m_constantBuffersOnCPU[i]));
   }
 }
 
-
 void MeshViewer::updateConstantBuffers()
 {
   ConstantBuffer cb;
 
-  constexpr float fov       = glm::radians(45.0f); // More standard FOV
-  float width     = m_uiData.frameWorkWidth;
-  float height    = m_uiData.frameWorkHeight;
-  float nearPlane = 0.0f;  // Slightly further near plane to avoid distortion
-  float farPlane  = 1.01f; // Far enough to capture distant objects
+  constexpr float fov       = glm::radians(45.0f);
+  float           width     = m_uiData.frameWorkWidth;
+  float           height    = m_uiData.frameWorkHeight;
+  float           nearPlane = 0.0f;
+  float           farPlane  = 1.01f;
 
   glm::mat4 projectionMatrix = glm::perspectiveFovLH_ZO<f32>(fov, width, height, nearPlane, farPlane);
 
   auto T = getNormalizationTransformation();
 
-  auto           V = m_examinerController.getTransformationMatrix();
+  auto V = m_examinerController.getTransformationMatrix();
 
   cb.mvp = projectionMatrix * V * T;
 
@@ -384,8 +454,7 @@ void MeshViewer::updateConstantBuffers()
 void MeshViewer::onDraw()
 {
 
-    updateConstantBuffers();
-
+  updateConstantBuffers();
 
   if (!ImGui::GetIO().WantCaptureMouse)
   {
@@ -408,7 +477,6 @@ void MeshViewer::onDraw()
   // Use this to get the transformation Matrix.
   // Of course, skip the (void). That is just to prevent warning, sinces I am not using it here (but you will have to!)
   //(void)m_examinerController.getTransformationMatrix();
-  
 
   const auto commandList = getCommandList();
   const auto rtvHandle   = getRTVHandle();
@@ -425,23 +493,34 @@ void MeshViewer::onDraw()
   commandList->RSSetViewports(1, &getViewport());
   commandList->RSSetScissorRects(1, &getRectScissor());
 
+  if (m_uiData.backFaceCullingEnabled)
+  {
+    commandList->SetPipelineState(m_pipelineStateForRenderingWithBackfaceCulling.Get());
+  }
+  else
+  {
+    commandList->SetPipelineState(m_pipelineStateForRenderingMeshes.Get());
+  }
 
-  commandList->SetPipelineState(m_pipelineStateForRenderingMeshes.Get());
   commandList->SetGraphicsRootSignature(m_rootSignature.Get());
   commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
   commandList->SetGraphicsRootConstantBufferView(0, m_constantBuffersOnCPU[getFrameIndex()]->GetGPUVirtualAddress());
 
-
   commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
   commandList->IASetIndexBuffer(&m_indexBufferView);
-
-
   commandList->DrawIndexedInstanced(m_meshLoaded.getNumTriangles() * 3, 1, 0, 0, 0);
 
   if (m_uiData.wireFrameOverlayEnabled)
   {
-    commandList->SetPipelineState(m_pipelineStateForRenderingWireframeOverlay.Get());
+    if (m_uiData.backFaceCullingEnabled)
+    {
+      commandList->SetPipelineState(m_pipelineStateForRenderingWireframeOverlayWithBackfaceCulling.Get());
+    }
+    else
+    {
+      commandList->SetPipelineState(m_pipelineStateForRenderingWireframeOverlay.Get());
+    }
     commandList->SetGraphicsRootSignature(m_rootSignature.Get());
     commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -451,15 +530,15 @@ void MeshViewer::onDraw()
     commandList->IASetIndexBuffer(&m_indexBufferView);
 
     commandList->DrawIndexedInstanced(m_meshLoaded.getNumTriangles() * 3, 1, 0, 0, 0);
-
   }
+
   // TODO Implement me!
 }
 
 void MeshViewer::onDrawUI()
 {
-  const auto imGuiFlags = m_examinerController.active() ? ImGuiWindowFlags_NoInputs : ImGuiWindowFlags_None;
-  m_uiData.frameWorkWidth = f32(ImGui::GetMainViewport()->WorkSize.x);
+  const auto imGuiFlags    = m_examinerController.active() ? ImGuiWindowFlags_NoInputs : ImGuiWindowFlags_None;
+  m_uiData.frameWorkWidth  = f32(ImGui::GetMainViewport()->WorkSize.x);
   m_uiData.frameWorkHeight = f32(ImGui::GetMainViewport()->WorkSize.y);
   m_uiData.frameWorkCenter =
       f32v2(ImGui::GetMainViewport()->GetWorkCenter().x, ImGui::GetMainViewport()->GetWorkCenter().y);
@@ -507,7 +586,6 @@ void MeshViewer::onDrawUI()
 
   // TODO Implement me!
 }
-
 
 // TODO Implement me!
 // That is a hell lot of code :-)
