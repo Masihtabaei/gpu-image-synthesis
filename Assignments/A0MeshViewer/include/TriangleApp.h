@@ -37,6 +37,8 @@ private:
     f32v3 specular;
     f32   exponent;
     f32   fieldOfView;
+    f32   nearPlane;
+    f32   farPlane;
   };
 
   struct Vertex

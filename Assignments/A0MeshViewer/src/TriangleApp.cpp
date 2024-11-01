@@ -31,6 +31,8 @@ MeshViewer::MeshViewer(const DX12AppConfig config)
   m_uiData.specular                = f32v3(1.0f, 1.0f, 1.0f);
   m_uiData.exponent                = f32(128.0f);
   m_uiData.fieldOfView             = f32(45.0f);
+  m_uiData.nearPlane               = f32(0.01f);
+  m_uiData.farPlane                = f32(1000.01f);
 
   m_appConfig = config;
   m_examinerController.setTranslationVector(f32v3(0, 0, 3));
@@ -403,7 +405,7 @@ f32m4 MeshViewer::getNormalizationTransformation()
   f32v3           scalingFactors = axisLengths / (longestAxis);
   glm::highp_mat4 scalingMatrix  = glm::scale(glm::mat4(1.0f), scalingFactors);
 
-  glm::f32 rotationAngle = glm::radians(180.0f);
+  constexpr glm::f32 rotationAngle = glm::radians(180.0f);
   glm::vec3 rotationAxisY  = glm::vec3(0.0f, 1.0f, 0.0f);
   glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), rotationAngle, rotationAxisY);
 
@@ -428,33 +430,29 @@ void MeshViewer::createConstantBuffers()
 
 void MeshViewer::updateConstantBuffers()
 {
-  ConstantBuffer cb;
+  ConstantBuffer currentConstantBufferOnCPU {};
 
-  float           fov       = glm::radians(m_uiData.fieldOfView);
-  float           width     = m_uiData.frameWorkWidth;
-  float           height    = m_uiData.frameWorkHeight;
-  float           nearPlane = 0.01f;
-  float           farPlane  = 1000.01f;
-
-  glm::mat4 projectionMatrix = glm::perspectiveFovLH_ZO<f32>(fov, width, height, nearPlane, farPlane);
+  float     fov              = glm::radians(static_cast<float>(m_uiData.fieldOfView));
+  glm::mat4 projectionMatrix = glm::perspectiveFovLH_ZO<f32>(fov, m_uiData.frameWorkWidth, m_uiData.frameWorkHeight,
+                                                             m_uiData.nearPlane, m_uiData.farPlane);
 
   auto T = getNormalizationTransformation();
 
   auto V = m_examinerController.getTransformationMatrix();
 
-  cb.mvp = projectionMatrix * V * T;
-  cb.mv                    = V * T;
-  cb.wireframeOverlayColor = f32v4(m_uiData.wireframeOverlayColor, 1.0f);
-  cb.ambientColor          = f32v4(m_uiData.ambient, 1.0f);
-  cb.diffuseColor          = f32v4(m_uiData.diffuse, 1.0f);
-  cb.specularColor_and_Exponent = f32v4(m_uiData.specular.x, m_uiData.specular.y, m_uiData.specular.z, m_uiData.exponent);
-  cb.flags                      = ui32v1((m_uiData.useTexture << 1) | int(m_uiData.twoSidedLightingEnabled));
+  currentConstantBufferOnCPU.mvp = projectionMatrix * V * T;
+  currentConstantBufferOnCPU.mv                    = V * T;
+  currentConstantBufferOnCPU.wireframeOverlayColor = f32v4(m_uiData.wireframeOverlayColor, 1.0f);
+  currentConstantBufferOnCPU.ambientColor          = f32v4(m_uiData.ambient, 1.0f);
+  currentConstantBufferOnCPU.diffuseColor          = f32v4(m_uiData.diffuse, 1.0f);
+  currentConstantBufferOnCPU.specularColor_and_Exponent = f32v4(m_uiData.specular.x, m_uiData.specular.y, m_uiData.specular.z, m_uiData.exponent);
+  currentConstantBufferOnCPU.flags                      = ui32v1((m_uiData.useTexture << 1) | int(m_uiData.twoSidedLightingEnabled));
 
 
   const auto& currentConstantBuffer = m_constantBuffersOnCPU[this->getFrameIndex()];
   void*       p;
   currentConstantBuffer->Map(0, nullptr, &p);
-  ::memcpy(p, &cb, sizeof(cb));
+  ::memcpy(p, &currentConstantBufferOnCPU, sizeof(currentConstantBufferOnCPU));
   currentConstantBuffer->Unmap(0, nullptr);
 }
 
@@ -616,6 +614,14 @@ void MeshViewer::onDrawUI()
   {
 
     std::cout << "Field of view has changed successfully!" << std::endl;
+  }
+  if (ImGui::SliderFloat("Near Plane", &m_uiData.nearPlane, 0.1f, 10.0f))
+  {
+    std::cout << "Near plane has changed successfully!" << std::endl;
+  }
+  if (ImGui::SliderFloat("Far Plane", &m_uiData.farPlane, 10.1f, 10000.0f))
+  {
+    std::cout << "Far plane has changed successfully!" << std::endl;
   }
   ImGui::End();
 
