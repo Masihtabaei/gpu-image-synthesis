@@ -38,8 +38,8 @@ MeshViewer::MeshViewer(const DX12AppConfig config)
 
   CograBinaryMeshFile cbm("../../../data/bunny.cbm");
   loadMesh(cbm);
-  loadTexture();
-  createTexture();
+  //loadTexture();
+
 
   createRootSignature();
   createPipelineForRenderingMeshes(false, false);
@@ -47,6 +47,7 @@ MeshViewer::MeshViewer(const DX12AppConfig config)
   createPipelineForRenderingMeshes(false, true);
   createPipelineForRenderingMeshes(true, true);
   createConstantBuffers();
+  createTexture();
   createTriangleMesh();
 }
 
@@ -57,12 +58,36 @@ MeshViewer::~MeshViewer()
 void MeshViewer::createRootSignature()
 {
   const ConstantBuffer   cb {};
-  CD3DX12_ROOT_PARAMETER parameter = {};
-  parameter.InitAsConstantBufferView(0, 0, D3D12_SHADER_VISIBILITY_ALL);
+  CD3DX12_ROOT_PARAMETER parameter[2] = {};
+  parameter[0].InitAsConstantBufferView(0, 0, D3D12_SHADER_VISIBILITY_ALL);
 
   CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDescription;
-  rootSignatureDescription.Init(1, &parameter, 0, nullptr,
+  //rootSignatureDescription.Init(1, &parameter, 0, nullptr,
+  //                              D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+
+  CD3DX12_DESCRIPTOR_RANGE range {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0};
+  parameter[1].InitAsDescriptorTable(1, &range);
+
+  D3D12_STATIC_SAMPLER_DESC sampler = {};
+  sampler.Filter                    = D3D12_FILTER_MIN_MAG_MIP_POINT;
+  sampler.AddressU                  = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+  sampler.AddressV                  = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+  sampler.AddressW                  = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+  sampler.MipLODBias                = 0;
+  sampler.MaxAnisotropy             = 0;
+  sampler.ComparisonFunc            = D3D12_COMPARISON_FUNC_NEVER;
+  sampler.BorderColor               = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+  sampler.MinLOD                    = 0.0f;
+  sampler.MaxLOD                    = D3D12_FLOAT32_MAX;
+  sampler.ShaderRegister            = 0;
+  sampler.RegisterSpace             = 0;
+  sampler.ShaderVisibility          = D3D12_SHADER_VISIBILITY_ALL;
+
+  rootSignatureDescription.Init(2, parameter, 1, &sampler,
                                 D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+
 
   ComPtr<ID3DBlob> rootBlob, errorBlob;
   D3D12SerializeRootSignature(&rootSignatureDescription, D3D_ROOT_SIGNATURE_VERSION_1, &rootBlob, &errorBlob);
@@ -107,7 +132,8 @@ void MeshViewer::createPipelineForRenderingMeshes(bool backfaceCullingEnabled,
 
   D3D12_INPUT_ELEMENT_DESC inputElementDescs[] = {
       {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-      {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,
+      {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+      {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,
        D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}};
 
   D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineStateDescription = {};
@@ -291,39 +317,49 @@ void MeshViewer::loadUVs()
 }
 
 
-void MeshViewer::loadTexture()
-{
-
-  stbi_set_flip_vertically_on_load(1);
-  std::unique_ptr<ui8, void (*)(void*)> textureLoaded(
-      stbi_load("../../../data/bunny.png", &m_textureOnCPU.width, &m_textureOnCPU.height, &m_textureOnCPU.channelNumberInFile, m_textureOnCPU.desiredChannelNumber), &stbi_image_free);
-  m_textureOnCPU.pointer = textureLoaded.get();
-
-    std::cout << std::format(
-                   "A texture with a width of {} and a height of {} was loaded which had originally {} channels but was loaded with {} channels!",
-                   m_textureOnCPU.width, m_textureOnCPU.height, m_textureOnCPU.channelNumberInFile, m_textureOnCPU.desiredChannelNumber)
-            << std::endl;
-}
 
 void MeshViewer::createTexture()
 {
-  D3D12_RESOURCE_DESC textureDescription = {};
-  textureDescription.MipLevels           = 1;
-  textureDescription.Format              = DXGI_FORMAT_R8G8B8A8_UNORM;
-  textureDescription.Width               = m_textureOnCPU.width;
-  textureDescription.Height              = m_textureOnCPU.height;
-  textureDescription.Flags               = D3D12_RESOURCE_FLAG_NONE;
-  textureDescription.DepthOrArraySize    = 1;
-  textureDescription.SampleDesc.Count    = 1;
-  textureDescription.SampleDesc.Quality  = 0;
-  textureDescription.Dimension           = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+  i32 textureWidth, textureHeight, textureComp;
 
-  const CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-  throwIfFailed(getDevice()->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &textureDescription,
+  stbi_set_flip_vertically_on_load(1);
+  std::unique_ptr<ui8, void (*)(void*)> image(
+      stbi_load("../../../data/bunny.png", &textureWidth, &textureHeight, &textureComp, 4), &stbi_image_free);
+
+  D3D12_RESOURCE_DESC textureDesc = {};
+  textureDesc.MipLevels           = 1;
+  textureDesc.Format              = DXGI_FORMAT_R8G8B8A8_UNORM;
+  textureDesc.Width               = textureWidth;
+  textureDesc.Height              = textureHeight;
+  textureDesc.Flags               = D3D12_RESOURCE_FLAG_NONE;
+  textureDesc.DepthOrArraySize    = 1;
+  textureDesc.SampleDesc.Count    = 1;
+  textureDesc.SampleDesc.Quality  = 0;
+  textureDesc.Dimension           = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+
+  const auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+  throwIfFailed(getDevice()->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &textureDesc,
                                                      D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&m_texture)));
 
+  UploadHelper uploadHelper(getDevice(), GetRequiredIntermediateSize(m_texture.Get(), 0, 1));
+  uploadHelper.uploadTexture(image.get(), m_texture, textureWidth, textureHeight, getCommandQueue());
 
-    std::cout << "The texture was created successfully!" << std::endl;
+  D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+  desc.Type                       = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+  desc.NumDescriptors             = 1;
+  desc.NodeMask                   = 0;
+  desc.Flags                      = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+  throwIfFailed(getDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_shaderResourceView)));
+
+  D3D12_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc = {};
+  shaderResourceViewDesc.ViewDimension                   = D3D12_SRV_DIMENSION_TEXTURE2D;
+  shaderResourceViewDesc.Shader4ComponentMapping         = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+  shaderResourceViewDesc.Format                          = DXGI_FORMAT_R8G8B8A8_UNORM;
+  shaderResourceViewDesc.Texture2D.MipLevels             = 1;
+  shaderResourceViewDesc.Texture2D.MostDetailedMip       = 0;
+  shaderResourceViewDesc.Texture2D.ResourceMinLODClamp   = 0.0f;
+  getDevice()->CreateShaderResourceView(m_texture.Get(), &shaderResourceViewDesc,
+                                        m_shaderResourceView->GetCPUDescriptorHandleForHeapStart());
 }
 
 f32v3 MeshViewer::calculateCentroidOfMeshLoaded()
@@ -467,6 +503,10 @@ void MeshViewer::onDraw()
 
   commandList->SetPipelineState(m_pipelineStates.at(m_uiData.backFaceCullingEnabled).Get());
   commandList->SetGraphicsRootSignature(m_rootSignature.Get());
+
+  commandList->SetDescriptorHeaps(1, m_shaderResourceView.GetAddressOf());
+  commandList->SetGraphicsRootDescriptorTable(1, m_shaderResourceView->GetGPUDescriptorHandleForHeapStart());
+
   commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
   commandList->SetGraphicsRootConstantBufferView(0, m_constantBuffersOnCPU[getFrameIndex()]->GetGPUVirtualAddress());
