@@ -30,6 +30,12 @@ private:
     f32v2 frameWorkCenter;
     bool  backFaceCullingEnabled;
     bool  wireFrameOverlayEnabled;
+    bool  twoSidedLightingEnabled;
+    bool  useTexture;
+    f32v3 ambient;
+    f32v3 diffuse;
+    f32v3 specular;
+    f32   exponent;
   };
 
   struct Vertex
@@ -42,8 +48,12 @@ private:
   struct ConstantBuffer
   {
     f32m4 mvp;
-    //f32m4 modelViewMatrix;
+    f32m4 mv;
     f32v4 wireframeOverlayColor;
+    f32v4 specularColor_and_Exponent;
+    f32v4 ambientColor;
+    f32v4 diffuseColor;
+    ui32v1  flags;
   };
 
   void loadMesh(const CograBinaryMeshFile& meshToLoad);
@@ -63,10 +73,7 @@ private:
   DX12AppConfig m_appConfig;
 
   ComPtr<ID3D12RootSignature> m_rootSignature;
-  ComPtr<ID3D12PipelineState> m_pipelineStateForRenderingMeshes;
-  ComPtr<ID3D12PipelineState> m_pipelineStateForRenderingWireframeOverlay;
-  ComPtr<ID3D12PipelineState> m_pipelineStateForRenderingWithBackfaceCulling;
-  ComPtr<ID3D12PipelineState> m_pipelineStateForRenderingWireframeOverlayWithBackfaceCulling;
+  std::vector<ComPtr<ID3D12PipelineState>> m_pipelineStates;
 
   ComPtr<ID3D12Resource>      m_vertexBuffer;
   D3D12_VERTEX_BUFFER_VIEW    m_vertexBufferView;
@@ -80,10 +87,7 @@ private:
   f32m4 getNormalizationTransformation();
 
   void   createRootSignature();
-  void   createPipelineForRenderingMeshes();
-  void   createPipelineForRenderingWireframeOverlay();
-  void   createPipelineforRenderingWithBackfaceCulling();
-  void   createPipelineForRenderingWireframeOverlayWithBackfaceCulling();
+  void   createPipelineForRenderingMeshes(bool backfaceCullingEnabled=false, bool wireFrameOverlayEnabled=false);
   void   createTriangleMesh();
   void   doVerticesMakeSense();
   void   createConstantBuffers();
