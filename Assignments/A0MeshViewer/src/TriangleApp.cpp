@@ -30,6 +30,7 @@ MeshViewer::MeshViewer(const DX12AppConfig config)
   m_uiData.diffuse                 = f32v3(1.0f, 1.0f, 1.0f);
   m_uiData.specular                = f32v3(1.0f, 1.0f, 1.0f);
   m_uiData.exponent                = f32(128.0f);
+  m_uiData.fieldOfView             = f32(45.0f);
 
   m_appConfig = config;
   m_examinerController.setTranslationVector(f32v3(0, 0, 3));
@@ -38,8 +39,7 @@ MeshViewer::MeshViewer(const DX12AppConfig config)
 
   CograBinaryMeshFile cbm("../../../data/bunny.cbm");
   loadMesh(cbm);
-  //loadTexture();
-
+  createTexture();
 
   createRootSignature();
   createPipelineForRenderingMeshes(false, false);
@@ -47,7 +47,6 @@ MeshViewer::MeshViewer(const DX12AppConfig config)
   createPipelineForRenderingMeshes(false, true);
   createPipelineForRenderingMeshes(true, true);
   createConstantBuffers();
-  createTexture();
   createTriangleMesh();
 }
 
@@ -431,7 +430,7 @@ void MeshViewer::updateConstantBuffers()
 {
   ConstantBuffer cb;
 
-  constexpr float fov       = glm::radians(45.0f);
+  float           fov       = glm::radians(m_uiData.fieldOfView);
   float           width     = m_uiData.frameWorkWidth;
   float           height    = m_uiData.frameWorkHeight;
   float           nearPlane = 0.01f;
@@ -612,6 +611,11 @@ void MeshViewer::onDrawUI()
   {
 
     std::cout << "Exponent has changed successfully!" << std::endl;
+  }
+  if (ImGui::SliderFloat("Field of View", &m_uiData.fieldOfView, 0.1f, 90.0f))
+  {
+
+    std::cout << "Field of view has changed successfully!" << std::endl;
   }
   ImGui::End();
 
