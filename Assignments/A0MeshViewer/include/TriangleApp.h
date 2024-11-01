@@ -57,12 +57,23 @@ private:
     ui32v1  flags;
   };
 
+  struct Texture
+  {
+    i32 width;
+    i32 height;
+    i32 channelNumberInFile;
+    i32 desiredChannelNumber = 4;
+    void* pointer;
+  };
+
   void loadMesh(const CograBinaryMeshFile& meshToLoad);
   void loadVertices();
   void loadIndices();
   void loadNormals();
   void loadUVs();
 
+  void loadTexture();
+ 
   CograBinaryMeshFile      m_meshLoaded;
   std::vector<Vertex>      m_vertexBufferOnCPU;
   std::vector<ui32>        m_indexBufferOnCPU;
@@ -96,4 +107,5 @@ private:
   void   updateConstantBuffers();
 
   UIData m_uiData;
+  Texture m_texture;
 };

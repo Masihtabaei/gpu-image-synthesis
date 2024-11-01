@@ -38,7 +38,8 @@ MeshViewer::MeshViewer(const DX12AppConfig config)
 
   CograBinaryMeshFile cbm("../../../data/bunny.cbm");
   loadMesh(cbm);
-  
+  loadTexture();
+
   createRootSignature();
   createPipelineForRenderingMeshes(false, false);
   createPipelineForRenderingMeshes(true, false);
@@ -286,6 +287,21 @@ void MeshViewer::loadUVs()
              "A total of {} UVs were successfully loaded into the vertex buffer on CPU, with a size of {} bytes.",
              m_vertexBufferOnCPU.size(), m_vertexBufferOnCPUSizeInBytes)
       << std::endl;
+}
+
+
+void MeshViewer::loadTexture()
+{
+
+  stbi_set_flip_vertically_on_load(1);
+  std::unique_ptr<ui8, void (*)(void*)> textureLoaded(
+      stbi_load("../../../data/bunny.png", &m_texture.width, &m_texture.height, &m_texture.channelNumberInFile, m_texture.desiredChannelNumber), &stbi_image_free);
+  m_texture.pointer = textureLoaded.get();
+
+    std::cout << std::format(
+                   "A texture with a width of {} and a height of {} was loaded which had originally {} channels but was loaded with {} channels!",
+                   m_texture.width, m_texture.height, m_texture.channelNumberInFile, m_texture.desiredChannelNumber)
+            << std::endl;
 }
 
 f32v3 MeshViewer::calculateCentroidOfMeshLoaded()
