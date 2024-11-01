@@ -215,6 +215,7 @@ void MeshViewer::loadMesh(const CograBinaryMeshFile& meshToLoad)
   loadVertices();
   loadIndices();
   loadNormals();
+  loadUVs();
 }
 
 void MeshViewer::loadVertices()
@@ -268,6 +269,25 @@ void MeshViewer::loadNormals()
       << std::endl;
 }
 
+void MeshViewer::loadUVs()
+{
+  void*                           UVsVoidPointer = m_meshLoaded.getAttributePtr(1);
+  CograBinaryMeshFile::FloatType* UVsPointer     = static_cast<CograBinaryMeshFile::FloatType*>(UVsVoidPointer);
+  for (ui32 i = 0; i < m_meshLoaded.getNumVertices(); i++)
+  {
+    f32v2 currentUV(UVsPointer[i * 2], UVsPointer[i * 2 + 1]);
+
+    m_vertexBufferOnCPU.at(i).UV = currentUV;
+  }
+
+  m_vertexBufferOnCPUSizeInBytes = m_vertexBufferOnCPU.size() * sizeof(Vertex);
+  std::cout
+      << std::format(
+             "A total of {} UVs were successfully loaded into the vertex buffer on CPU, with a size of {} bytes.",
+             m_vertexBufferOnCPU.size(), m_vertexBufferOnCPUSizeInBytes)
+      << std::endl;
+}
+
 f32v3 MeshViewer::calculateCentroidOfMeshLoaded()
 {
   f32v3 componentwiseSumOfPositions(0.0f, 0.0f, 0.0f);
@@ -310,7 +330,7 @@ f32m4 MeshViewer::getNormalizationTransformation()
   f32v3           scalingFactors = axisLengths / (longestAxis);
   glm::highp_mat4 scalingMatrix  = glm::scale(glm::mat4(1.0f), scalingFactors);
 
-  glm::f32  rotationAngle = glm::radians(180.0f);
+  glm::f32 rotationAngle = glm::radians(180.0f);
   glm::vec3 rotationAxisY  = glm::vec3(0.0f, 1.0f, 0.0f);
   glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), rotationAngle, rotationAxisY);
 

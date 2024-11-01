@@ -42,6 +42,7 @@ private:
   {
     f32v3 position;
     f32v3 normal;
+    f32v2 UV;
   };
 
 
@@ -60,6 +61,7 @@ private:
   void loadVertices();
   void loadIndices();
   void loadNormals();
+  void loadUVs();
 
   CograBinaryMeshFile      m_meshLoaded;
   std::vector<Vertex>      m_vertexBufferOnCPU;
