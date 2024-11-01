@@ -32,6 +32,7 @@ private:
     bool  wireFrameOverlayEnabled;
     bool  twoSidedLightingEnabled;
     bool  useTexture;
+    bool  flatShadingEnabled;
     f32v3 ambient;
     f32v3 diffuse;
     f32v3 specular;

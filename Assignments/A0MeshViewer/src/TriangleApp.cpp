@@ -26,6 +26,7 @@ MeshViewer::MeshViewer(const DX12AppConfig config)
   m_uiData.wireFrameOverlayEnabled = false;
   m_uiData.twoSidedLightingEnabled = false;
   m_uiData.useTexture              = false;
+  m_uiData.flatShadingEnabled      = false;
   m_uiData.ambient                 = f32v3(0.0f, 0.0f, 0.0f);
   m_uiData.diffuse                 = f32v3(1.0f, 1.0f, 1.0f);
   m_uiData.specular                = f32v3(1.0f, 1.0f, 1.0f);
@@ -446,7 +447,7 @@ void MeshViewer::updateConstantBuffers()
   currentConstantBufferOnCPU.ambientColor          = f32v4(m_uiData.ambient, 1.0f);
   currentConstantBufferOnCPU.diffuseColor          = f32v4(m_uiData.diffuse, 1.0f);
   currentConstantBufferOnCPU.specularColor_and_Exponent = f32v4(m_uiData.specular.x, m_uiData.specular.y, m_uiData.specular.z, m_uiData.exponent);
-  currentConstantBufferOnCPU.flags                      = ui32v1((m_uiData.useTexture << 1) | int(m_uiData.twoSidedLightingEnabled));
+  currentConstantBufferOnCPU.flags                      = ui32v1((m_uiData.flatShadingEnabled << 2) | (m_uiData.useTexture << 1) | int(m_uiData.twoSidedLightingEnabled));
 
 
   const auto& currentConstantBuffer = m_constantBuffersOnCPU[this->getFrameIndex()];
@@ -588,6 +589,12 @@ void MeshViewer::onDrawUI()
   {
     std::cout << std::format("Texture mode has changed and is now {}!",
                              static_cast<bool>(m_uiData.useTexture) ? "enabled" : "disabled")
+              << std::endl;
+  }
+  if (ImGui::Checkbox("Flat Shading", &m_uiData.flatShadingEnabled))
+  {
+    std::cout << std::format("Flat shading mode has changed and is now {}!",
+                             static_cast<bool>(m_uiData.flatShadingEnabled) ? "enabled" : "disabled")
               << std::endl;
   }
   if (ImGui::ColorEdit3("Ambient", &m_uiData.ambient[0]))
