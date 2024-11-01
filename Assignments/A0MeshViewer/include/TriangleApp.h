@@ -73,7 +73,8 @@ private:
   void loadUVs();
 
   void loadTexture();
- 
+  void createTexture();
+
   CograBinaryMeshFile      m_meshLoaded;
   std::vector<Vertex>      m_vertexBufferOnCPU;
   std::vector<ui32>        m_indexBufferOnCPU;
@@ -92,6 +93,7 @@ private:
   D3D12_VERTEX_BUFFER_VIEW    m_vertexBufferView;
   ComPtr<ID3D12Resource>      m_indexBuffer;
   D3D12_INDEX_BUFFER_VIEW     m_indexBufferView;
+  ComPtr<ID3D12Resource>      m_texture;
 
   std::vector<ComPtr<ID3D12Resource>> m_constantBuffersOnCPU;
 
@@ -107,5 +109,5 @@ private:
   void   updateConstantBuffers();
 
   UIData m_uiData;
-  Texture m_texture;
+  Texture m_textureOnCPU;
 };

@@ -39,6 +39,7 @@ MeshViewer::MeshViewer(const DX12AppConfig config)
   CograBinaryMeshFile cbm("../../../data/bunny.cbm");
   loadMesh(cbm);
   loadTexture();
+  createTexture();
 
   createRootSignature();
   createPipelineForRenderingMeshes(false, false);
@@ -295,13 +296,34 @@ void MeshViewer::loadTexture()
 
   stbi_set_flip_vertically_on_load(1);
   std::unique_ptr<ui8, void (*)(void*)> textureLoaded(
-      stbi_load("../../../data/bunny.png", &m_texture.width, &m_texture.height, &m_texture.channelNumberInFile, m_texture.desiredChannelNumber), &stbi_image_free);
-  m_texture.pointer = textureLoaded.get();
+      stbi_load("../../../data/bunny.png", &m_textureOnCPU.width, &m_textureOnCPU.height, &m_textureOnCPU.channelNumberInFile, m_textureOnCPU.desiredChannelNumber), &stbi_image_free);
+  m_textureOnCPU.pointer = textureLoaded.get();
 
     std::cout << std::format(
                    "A texture with a width of {} and a height of {} was loaded which had originally {} channels but was loaded with {} channels!",
-                   m_texture.width, m_texture.height, m_texture.channelNumberInFile, m_texture.desiredChannelNumber)
+                   m_textureOnCPU.width, m_textureOnCPU.height, m_textureOnCPU.channelNumberInFile, m_textureOnCPU.desiredChannelNumber)
             << std::endl;
+}
+
+void MeshViewer::createTexture()
+{
+  D3D12_RESOURCE_DESC textureDescription = {};
+  textureDescription.MipLevels           = 1;
+  textureDescription.Format              = DXGI_FORMAT_R8G8B8A8_UNORM;
+  textureDescription.Width               = m_textureOnCPU.width;
+  textureDescription.Height              = m_textureOnCPU.height;
+  textureDescription.Flags               = D3D12_RESOURCE_FLAG_NONE;
+  textureDescription.DepthOrArraySize    = 1;
+  textureDescription.SampleDesc.Count    = 1;
+  textureDescription.SampleDesc.Quality  = 0;
+  textureDescription.Dimension           = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+
+  const CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+  throwIfFailed(getDevice()->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &textureDescription,
+                                                     D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&m_texture)));
+
+
+    std::cout << "The texture was created successfully!" << std::endl;
 }
 
 f32v3 MeshViewer::calculateCentroidOfMeshLoaded()
