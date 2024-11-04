@@ -481,7 +481,7 @@ void MeshViewer::onDraw()
 
   // TODO Implement me!
   // Use this to get the transformation Matrix.
-  // Of course, skip the (void). That is just to prevent warning, sinces I am not using it here (but you will have to!)
+  // Of course, skip the (void). That is just to prevent warning, since I am not using it here (but you will have to!)
   //(void)m_examinerController.getTransformationMatrix();
 
   const auto commandList = getCommandList();

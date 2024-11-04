@@ -47,7 +47,6 @@ float4 PS_main(VertexShaderOutput input)
     float3 lightDirection = float3(0.0f, 0.0f, -1.0f);
 
     float3 l = normalize(lightDirection);
-    //float3 n = normalize(input.viewSpaceNormal);
     float3 n = flatShading ? normalize(cross(ddx(input.viewSpacePosition), ddy(input.viewSpacePosition))) : normalize(input.viewSpaceNormal);
     if (twoSidedLighting)
     {

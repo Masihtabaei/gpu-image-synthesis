@@ -27,6 +27,8 @@ project(GImS VERSION 0.0.1 DESCRIPTION "" LANGUAGES CXX C)
 add_subdirectory(./gimslib)
 add_subdirectory(./Assignments)
 add_subdirectory(./Tutorials)
+add_subdirectory(./experiments)
+
 
 # set the startup project for the "play" button in MSVC
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
