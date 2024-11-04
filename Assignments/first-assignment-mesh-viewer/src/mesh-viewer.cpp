@@ -1,4 +1,4 @@
-#include "TriangleApp.h"
+#include "mesh-viewer.h"
 #include <d3dx12/d3dx12.h>
 #include <format>
 #include <gimslib/contrib/stb/stb_image.h>
@@ -124,13 +124,13 @@ void MeshViewer::createPipelineForRenderingMeshes(bool backfaceCullingEnabled,
 
   const auto vertexShader =
       wireFrameOverlayEnabled 
-          ? compileShader(L"../../../Assignments/A0MeshViewer/Shaders/TriangleMesh.hlsl", L"VS_WireFrame_main", L"vs_6_0")
-          : compileShader(L"../../../Assignments/A0MeshViewer/Shaders/TriangleMesh.hlsl", L"VS_main", L"vs_6_0");
+          ? compileShader(L"../../../assignments/first-assignment-mesh-viewer/shaders/mesh-viewer.hlsl", L"VS_WireFrame_main", L"vs_6_0")
+          : compileShader(L"../../../assignments/first-assignment-mesh-viewer/shaders/mesh-viewer.hlsl", L"VS_main", L"vs_6_0");
 
   const auto pixelShader =
       wireFrameOverlayEnabled
-      ? compileShader(L"../../../Assignments/A0MeshViewer/Shaders/TriangleMesh.hlsl", L"PS_WireFrame_main", L"ps_6_0")
-      : compileShader(L"../../../Assignments/A0MeshViewer/Shaders/TriangleMesh.hlsl", L"PS_main", L"ps_6_0");
+      ? compileShader(L"../../../assignments/first-assignment-mesh-viewer/shaders/mesh-viewer.hlsl", L"PS_WireFrame_main", L"ps_6_0")
+      : compileShader(L"../../../assignments/first-assignment-mesh-viewer/shaders/mesh-viewer.hlsl", L"PS_main", L"ps_6_0");
 
   D3D12_INPUT_ELEMENT_DESC inputElementDescs[] = {
       {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},

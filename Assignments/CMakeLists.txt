@@ -1,5 +1,5 @@
-add_subdirectory(./A0MeshViewer)
-set_target_properties (A0MeshViewer PROPERTIES FOLDER Assignments)
+add_subdirectory(./first-assignment-mesh-viewer)
+set_target_properties (first-assignment-mesh-viewer PROPERTIES FOLDER assignments)
 
 
 

@@ -1,4 +1,4 @@
-#include "TriangleApp.h"
+#include "mesh-viewer.h"
 #include <gimslib/d3d/DX12Util.hpp>
 #include <gimslib/types.hpp>
 #include <iostream>
