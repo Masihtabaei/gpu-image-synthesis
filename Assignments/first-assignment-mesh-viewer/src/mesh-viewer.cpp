@@ -541,7 +541,7 @@ void MeshViewer::onDrawUI()
       f32v2(ImGui::GetMainViewport()->GetWorkCenter().x, ImGui::GetMainViewport()->GetWorkCenter().y);
   // TODO Implement me!
   ImGui::Begin("Information", nullptr, imGuiFlags);
-  ImGui::Text("Frametime: %f", 1.0f / ImGui::GetIO().Framerate * 1000.0f);
+  ImGui::Text("Frame time: %f", 1.0f / ImGui::GetIO().Framerate * 1000.0f);
   ImGui::Text("Frame Width: %.2f", m_uiData.frameWorkWidth);
   ImGui::Text("Frame Height: %.2f", m_uiData.frameWorkHeight);
   ImGui::Text("Frame Aspect Ratio: %.2f", (m_uiData.frameWorkWidth) / (m_uiData.frameWorkHeight));
