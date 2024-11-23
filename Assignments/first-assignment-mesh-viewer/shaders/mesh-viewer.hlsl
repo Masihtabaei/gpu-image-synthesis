@@ -20,6 +20,8 @@ cbuffer PerFrameConstants : register(b0)
   float4   specularColor_and_Exponent;
   float4   ambientColor;
   float4   diffuseColor;
+  float    lightDirectionXCoordinate;
+  float    lightDirectionYCoordinate;
   uint1    flags;
 }
 
@@ -44,7 +46,7 @@ float4 PS_main(VertexShaderOutput input)
     bool useTexture       = flags & 0x2;
     bool flatShading = flags & 0x4;
 
-    float3 lightDirection = float3(0.0f, 0.0f, -1.0f);
+    float3 lightDirection = float3(lightDirectionXCoordinate, lightDirectionYCoordinate, -1.0f);
 
     float3 l = normalize(lightDirection);
     float3 n = flatShading ? normalize(cross(ddx(input.viewSpacePosition), ddy(input.viewSpacePosition))) : normalize(input.viewSpaceNormal);
@@ -64,8 +66,6 @@ float4 PS_main(VertexShaderOutput input)
                       f_specular * specularColor_and_Exponent.xyz,
                   1);
     
-    //return float4(1.0f, 1.0f, 0.0f, 1.0f);
-
 }
 
 VertexShaderOutput_Wireframe VS_WireFrame_main(float3 position : POSITION , float3 normal : NORMAL, float2 texCoord : TEXCOORD)

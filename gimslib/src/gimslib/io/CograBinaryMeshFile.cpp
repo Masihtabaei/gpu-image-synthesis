@@ -15,8 +15,8 @@ CograBinaryMeshFile::CograBinaryMeshFile(const CograBinaryMeshFile& other)
 {
   m_positions              = other.m_positions;
   m_triangles              = other.m_triangles;
-  m_attributes             = std::vector<ui8*>(other.m_attributes);
-  m_attributeNames         = std::vector<char*>(other.m_attributeNames);
+  //m_attributes             = std::vector<ui8*>(other.m_attributes);
+  //m_attributeNames         = std::vector<char*>(other.m_attributeNames);
   m_attributeComponents    = other.m_attributeComponents;
   m_attributeComponentSize = other.m_attributeComponentSize;
   m_constantComponents     = other.m_constantComponents;
