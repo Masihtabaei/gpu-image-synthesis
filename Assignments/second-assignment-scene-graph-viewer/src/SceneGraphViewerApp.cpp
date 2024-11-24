@@ -63,7 +63,7 @@ void SceneGraphViewerApp::onDrawUI()
 {
   const auto imGuiFlags = m_examinerController.active() ? ImGuiWindowFlags_NoInputs : ImGuiWindowFlags_None;
   ImGui::Begin("Information", nullptr, imGuiFlags);
-  ImGui::Text("Frametime: %f", 1.0f / ImGui::GetIO().Framerate * 1000.0f);
+  ImGui::Text("Frame time: %f", 1.0f / ImGui::GetIO().Framerate * 1000.0f);
   ImGui::End();
   ImGui::Begin("Configuration", nullptr, imGuiFlags);
   ImGui::ColorEdit3("Background Color", &m_uiData.m_backgroundColor[0]);
@@ -72,7 +72,44 @@ void SceneGraphViewerApp::onDrawUI()
 
 void SceneGraphViewerApp::createRootSignature()
 {
+  const uint8_t NUMBER_OF_ROOT_PARAMETERS = 2;
+  const uint8_t    NUMBER_OF_DESCRIPTOR_RANGES = 2;
+  const uint8_t  NUMBER_OF_STATIC_SAMPLERS   = 1;
+
   // Assignment 1
+  CD3DX12_DESCRIPTOR_RANGE descriptorRanges[NUMBER_OF_DESCRIPTOR_RANGES] = {};
+  // D3D12_DESCRIPTOR_RANGE_FLAG_NONE -> D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE
+  descriptorRanges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 3, 0, 0);
+  // D3D12_DESCRIPTOR_RANGE_FLAG_NONE -> D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE
+  descriptorRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5, 0);
+
+  CD3DX12_ROOT_PARAMETER rootParameters[NUMBER_OF_ROOT_PARAMETERS] = {};
+  rootParameters[0].InitAsDescriptorTable(1, &descriptorRanges[0]);
+  rootParameters[1].InitAsDescriptorTable(1, &descriptorRanges[1]);
+
+  D3D12_STATIC_SAMPLER_DESC staticSamplerDescription = {};
+  staticSamplerDescription.Filter                    = D3D12_FILTER_MIN_MAG_MIP_POINT;
+  staticSamplerDescription.AddressU                  = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+  staticSamplerDescription.AddressV                  = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+  staticSamplerDescription.AddressW                  = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+  staticSamplerDescription.MipLODBias                = 0;
+  staticSamplerDescription.MaxAnisotropy             = 0;
+  staticSamplerDescription.ComparisonFunc            = D3D12_COMPARISON_FUNC_NEVER;
+  staticSamplerDescription.BorderColor               = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+  staticSamplerDescription.MinLOD                    = 0.0f;
+  staticSamplerDescription.MaxLOD                    = D3D12_FLOAT32_MAX;
+  staticSamplerDescription.ShaderRegister            = 0;
+  staticSamplerDescription.RegisterSpace             = 0;
+  staticSamplerDescription.ShaderVisibility          = D3D12_SHADER_VISIBILITY_ALL;
+
+  CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDescription = {};
+  rootSignatureDescription.Init(NUMBER_OF_ROOT_PARAMETERS, rootParameters, NUMBER_OF_STATIC_SAMPLERS,
+                                &staticSamplerDescription,
+                                D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+  
+  ComPtr<ID3DBlob> rootBlob, errorBlob;
+  D3D12SerializeRootSignature(&rootSignatureDescription, D3D_ROOT_SIGNATURE_VERSION_1, &rootBlob, &errorBlob);
+  getDevice()->CreateRootSignature(0, rootBlob->GetBufferPointer(), rootBlob->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature));
 }
 
 void SceneGraphViewerApp::createPipeline()

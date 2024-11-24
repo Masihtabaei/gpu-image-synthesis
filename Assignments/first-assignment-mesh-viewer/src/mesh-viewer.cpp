@@ -17,7 +17,6 @@ MeshViewer::MeshViewer(const DX12AppConfig config)
     : DX12App(config)
     , m_examinerController(true)
 {
-
   initializeCameraPosition();
 
   initializeUIData();
@@ -310,7 +309,7 @@ void MeshViewer::loadUVs(const CograBinaryMeshFile* meshToLoad)
 void MeshViewer::createTexture()
 {
   i32 textureWidth, textureHeight, textureComp;
-
+  
   stbi_set_flip_vertically_on_load(1);
   std::unique_ptr<ui8, void (*)(void*)> image(
       stbi_load("../../../data/bunny.png", &textureWidth, &textureHeight, &textureComp, 4), &stbi_image_free);
@@ -368,11 +367,8 @@ f32v3 MeshViewer::calculateCentroidOfMeshLoaded()
 glm::mat2x3 MeshViewer::calculateBoundingBox()
 {
   // Zero-initializing both local variables for finding beginning and end of the bounding box
-  f32v3 startOfBoundingBox = f32v3(m_vertexBufferOnCPU.at(0).position.x, m_vertexBufferOnCPU.at(0).position.y,
-                                   m_vertexBufferOnCPU.at(0).position.z);
- 
-  f32v3 endOfBoundingBox = f32v3(m_vertexBufferOnCPU.at(0).position.x, m_vertexBufferOnCPU.at(0).position.y,
-                                 m_vertexBufferOnCPU.at(0).position.z);
+  f32v3 startOfBoundingBox = m_vertexBufferOnCPU.at(0).position;
+  f32v3 endOfBoundingBox = m_vertexBufferOnCPU.at(0).position;
 
   // Finding beginning and end of the bounding box
   for (auto& vertex : m_vertexBufferOnCPU)
