@@ -385,9 +385,7 @@ glm::mat2x3 MeshViewer::calculateBoundingBox()
 
 void MeshViewer::calculateNormalizationTransformation()
 {
-  f32v3           centroid          = calculateCentroidOfMeshLoaded();
-  // Assembling a transformation matrix which centers the mesh loaded
-  glm::highp_mat4 translationMatrix = glm::translate(glm::mat4(1.0f), -centroid);
+
 
   glm::mat2x3 boundingBox = calculateBoundingBox();
 
@@ -399,6 +397,10 @@ void MeshViewer::calculateNormalizationTransformation()
 
   // Calculating scaling factors based on the longest axes
   f32v3           scalingFactors = axisLengths / (longestAxis);
+
+  f32v3 centroid = (boundingBox[1] + boundingBox[0]) / 2;
+  // Assembling a transformation matrix which centers the mesh loaded
+  glm::highp_mat4 translationMatrix = glm::translate(glm::mat4(1.0f), -centroid);
 
   // Assembling a transformation matrix which normalizes the axis lengths
   glm::highp_mat4 scalingMatrix  = glm::scale(glm::mat4(1.0f), scalingFactors);

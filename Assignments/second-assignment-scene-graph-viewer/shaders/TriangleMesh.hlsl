@@ -15,7 +15,7 @@ cbuffer PerFrameConstants : register(b0)
 }
 
 /// <summary>
-/// Constants that can change per Mesh/Drawcall.
+/// Constants that can change per Mesh/Draw call.
 /// </summary>
 cbuffer PerMeshConstants : register(b1)
 {

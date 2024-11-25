@@ -63,5 +63,10 @@ private:
   f32v3 m_lowerLeftBottom;
   //! The upper right top of the AABB.
   f32v3 m_upperRightTop;
+	
+  f32v3 calculateCentroid() const;
+
+  f32 findLongestAxisLegth() const;
+  f32v3 calculateAxesLengths() const;
 };
 } // namespace gims
