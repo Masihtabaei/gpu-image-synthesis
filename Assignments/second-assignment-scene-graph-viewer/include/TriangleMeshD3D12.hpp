@@ -4,7 +4,15 @@
 #include <gimslib/types.hpp>
 #include <vector>
 #include <wrl.h>
+#include <iostream>
 using Microsoft::WRL::ComPtr;
+
+struct Vertex
+{
+  gims::f32v3 position;
+  gims::f32v3 normal;
+  gims::f32v2 textureCoordinate;
+};
 
 namespace gims
 {
@@ -70,9 +78,23 @@ private:
   ui32                   m_materialIndex;    //! Material index of the mesh.
   ComPtr<ID3D12Resource> m_vertexBuffer;     //! The vertex buffer on the GPU.
   ComPtr<ID3D12Resource> m_indexBuffer;      //! The index buffer on the GPU.
+  D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
+  D3D12_INDEX_BUFFER_VIEW m_indexBufferView;
+
 
   //! Input element descriptor defining the vertex format.
   static const std::vector<D3D12_INPUT_ELEMENT_DESC> m_inputElementDescs;
+
+  std::vector<Vertex> m_vertexBufferOnCPU;
+  std::vector<ui32> m_indexBufferOnCPU;
+
+  void createVertexBufferOnCPU(f32v3 const* const positions, f32v3 const* const normals,
+                               f32v3 const* const textureCoordinates, ui32 nVertices);
+
+  void createIndexBufferOnCPU(ui32v3 const* const indexBuffer, ui32 nIndices);
+  void uploadVertexBuffOnGPU(const ComPtr<ID3D12Device>& device, const ComPtr<ID3D12CommandQueue>& commandQueue);
+  void uploadIndexBufferOnGPU(const ComPtr<ID3D12Device>& device, const ComPtr<ID3D12CommandQueue>& commandQueue);
+
 };
 
 } // namespace gims

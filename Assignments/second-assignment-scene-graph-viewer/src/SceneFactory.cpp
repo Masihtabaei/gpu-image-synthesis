@@ -11,12 +11,13 @@ using namespace gims;
 namespace
 {
 /// <summary>
-/// Converts the index buffer required for D3D12 renndering from an aiMesh.
+/// Converts the index buffer required for D3D12 rendering from an aiMesh.
 /// </summary>
 /// <param name="mesh">The ai mesh containing an index buffer.</param>
 /// <returns></returns>
 std::vector<ui32v3> getTriangleIndicesFromAiMesh(aiMesh const* const mesh)
 {
+  mesh[0];
   std::vector<ui32v3> result;
   // Assignment 3
   (void)mesh;

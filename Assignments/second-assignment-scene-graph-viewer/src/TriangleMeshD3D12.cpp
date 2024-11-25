@@ -1,15 +1,7 @@
 #include "TriangleMeshD3D12.hpp"
 #include <d3dx12/d3dx12.h>
 #include <gimslib/d3d/UploadHelper.hpp>
-namespace
-{
-struct Vertex
-{
-  gims::f32v3 position;
-  gims::f32v3 normal;
-  gims::f32v2 textureCoordinate;
-};
-} // namespace
+
 
 namespace gims
 {
@@ -29,18 +21,17 @@ TriangleMeshD3D12::TriangleMeshD3D12(f32v3 const* const positions, f32v3 const* 
     , m_materialIndex(materialIndex)
 {
   // Assignment 2
-  (void)positions;
-  (void)normals;
-  (void)textureCoordinates;
-  (void)indexBuffer;
-  (void)device;
-  (void)commandQueue;
+  createVertexBufferOnCPU(positions, normals, textureCoordinates, nVertices);
+  createIndexBufferOnCPU(indexBuffer, nIndices);
+  uploadVertexBuffOnGPU(device, commandQueue);
+  uploadIndexBufferOnGPU(device, commandQueue);
 }
 
 void TriangleMeshD3D12::addToCommandList(const ComPtr<ID3D12GraphicsCommandList>& commandList) const
 {
-  (void)commandList;
-// Assignment 2
+  // Assignment 2
+  commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
+  commandList->IASetIndexBuffer(&m_indexBufferView);
 }
 
 const AABB TriangleMeshD3D12::getAABB() const
@@ -63,7 +54,68 @@ TriangleMeshD3D12::TriangleMeshD3D12()
     , m_vertexBufferSize(0)
     , m_indexBufferSize(0)
     , m_materialIndex((ui32)-1)
+    , m_indexBufferView()
+    , m_vertexBufferView()
 {
+}
+
+void TriangleMeshD3D12::createVertexBufferOnCPU(f32v3 const* const positions, f32v3 const* const normals,
+                             f32v3 const* const textureCoordinates, ui32 nVertices)
+{
+  m_vertexBufferOnCPU.resize(nVertices);
+  for (ui32 i = 0; i < nVertices; i++)
+  {
+    Vertex vertexToAdd            = {};
+    vertexToAdd.position = positions[i];
+    vertexToAdd.normal   = normals[i];
+    vertexToAdd.textureCoordinate = textureCoordinates[i];
+    m_vertexBufferOnCPU.push_back(vertexToAdd);
+  }
+  std::cout << "Vertex buffer created successfully on the CPU" << std::endl;
+}
+
+ void TriangleMeshD3D12::createIndexBufferOnCPU(ui32v3 const* const indexBuffer, ui32 nIndices)
+{
+  m_indexBufferOnCPU.resize(nIndices);
+  for (ui32 i = 0; i < (nIndices / 3); i++)
+  {
+    m_indexBufferOnCPU.push_back(indexBuffer[i].x);
+    m_indexBufferOnCPU.push_back(indexBuffer[i].y);
+    m_indexBufferOnCPU.push_back(indexBuffer[i].z);
+  }
+  std::cout << "Index buffer created successfully on the CPU!" << std::endl;
+}
+
+void TriangleMeshD3D12::uploadVertexBuffOnGPU(const ComPtr<ID3D12Device>&       device,
+                                            const ComPtr<ID3D12CommandQueue>& commandQueue)
+{
+  UploadHelper vertexBufferUploader(device, m_vertexBufferSize);
+  const CD3DX12_RESOURCE_DESC vertexBufferDescription =
+      CD3DX12_RESOURCE_DESC::Buffer(m_vertexBufferSize);
+  const CD3DX12_HEAP_PROPERTIES     defaultHeapProperties   = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+  device->CreateCommittedResource(&defaultHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexBufferDescription,
+                                       D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&m_vertexBuffer));
+  m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
+  m_vertexBufferView.SizeInBytes    = ui32(m_vertexBufferSize);
+  m_vertexBufferView.StrideInBytes  = sizeof(Vertex);
+  vertexBufferUploader.uploadBuffer(m_vertexBufferOnCPU.data(), m_vertexBuffer, m_vertexBufferSize, commandQueue);
+  std::cout << "Vertex buffer uploaded successfully!" << std::endl;
+}
+
+void TriangleMeshD3D12::uploadIndexBufferOnGPU(const ComPtr<ID3D12Device>&       device,
+                                             const ComPtr<ID3D12CommandQueue>& commandQueue)
+{
+  UploadHelper indexBufferUploader(device, m_indexBufferSize);
+  const CD3DX12_RESOURCE_DESC indexBufferDescription = CD3DX12_RESOURCE_DESC::Buffer(m_indexBufferSize);
+  const CD3DX12_HEAP_PROPERTIES     defaultHeapProperties   = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+  device->CreateCommittedResource(&defaultHeapProperties, D3D12_HEAP_FLAG_NONE, &indexBufferDescription,
+                                       D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&m_indexBuffer));
+  m_indexBufferView.BufferLocation = m_indexBuffer->GetGPUVirtualAddress();
+  m_indexBufferView.SizeInBytes    = ui32(m_indexBufferSize);
+  m_indexBufferView.Format         = DXGI_FORMAT_R32_UINT;
+
+  indexBufferUploader.uploadBuffer(m_indexBufferOnCPU.data(), m_indexBuffer, m_indexBufferSize, commandQueue);
+  std::cout << "Index buffer uploaded successfully!" << std::endl;
 }
 
 } // namespace gims
