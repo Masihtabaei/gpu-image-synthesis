@@ -313,11 +313,27 @@ void SceneGraphFactory::createTextures(
     std::filesystem::path parentPath, const ComPtr<ID3D12Device>& device,
     const ComPtr<ID3D12CommandQueue>& commandQueue, Scene& outputScene)
 {
-  (void)textureFileNameToTextureIndex;
-  (void)parentPath;
-  (void)device;
-  (void)commandQueue;
-  (void)outputScene;
+  
+  ui8v4 defaultWhiteTextureData(1, 1, 1, 255);
+  ui8v4 defaultBlackTextureData(0, 0, 0, 255);
+  ui8v4 defaultNormalMapTextureData(0, 0, 0, 255);
+
+  Texture2DD3D12 defaultWhiteTexture(&defaultWhiteTextureData, 1, 1, device, commandQueue);
+  Texture2DD3D12 defaultBlackTexture(&defaultBlackTextureData, 1, 1, device, commandQueue);
+  Texture2DD3D12 defaultNormalMapTexture(&defaultNormalMapTextureData, 1, 1, device, commandQueue);
+
+  outputScene.m_textures.resize(textureFileNameToTextureIndex.size() + 3);
+  outputScene.m_textures.at(0) = defaultWhiteTexture;
+  outputScene.m_textures.at(1) = defaultBlackTexture;
+  outputScene.m_textures.at(2) = defaultNormalMapTexture;
+
+
+  for (const auto& [textureRelativePath, textureIndex] : textureFileNameToTextureIndex)
+  {
+    Texture2DD3D12 textureToAdd((parentPath / textureRelativePath), device, commandQueue); 
+    outputScene.m_textures.at(textureIndex) = textureToAdd;
+  }
+
   // Assignment 9
 }
 
