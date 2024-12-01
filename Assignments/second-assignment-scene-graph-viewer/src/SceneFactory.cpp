@@ -17,11 +17,19 @@ namespace
 /// <returns></returns>
 std::vector<ui32v3> getTriangleIndicesFromAiMesh(aiMesh const* const mesh)
 {
-  mesh[0];
-  std::vector<ui32v3> result;
+  std::cout << "An attempt was made to extract the indices!" << std::endl;
+  const auto          numberOfFaces = mesh->mNumFaces;
+  const auto         faces    = mesh->mFaces;
+  std::vector<ui32v3> indicesGroupedInFaces;
+  indicesGroupedInFaces.resize(numberOfFaces);
+
+  for (ui32 i = 0; i < numberOfFaces; i++)
+  {
+    indicesGroupedInFaces.at(i) = (ui32v3(faces[i].mIndices[0], faces[i].mIndices[1], faces[i].mIndices[2]));
+  }
+
   // Assignment 3
-  (void)mesh;
-  return result;
+  return indicesGroupedInFaces;
 }
 
 void addTextureToDescriptorHeap(const ComPtr<ID3D12Device>& device, aiTextureType aiTextureTypeValue,
@@ -113,7 +121,7 @@ Scene SceneGraphFactory::createFromAssImpScene(const std::filesystem::path      
   const auto arguments = aiPostProcessSteps::aiProcess_Triangulate | aiProcess_GenSmoothNormals |
                          aiProcess_GenUVCoords | aiProcess_ConvertToLeftHanded | aiProcess_OptimizeMeshes |
                          aiProcess_RemoveRedundantMaterials | aiProcess_ImproveCacheLocality |
-                         aiProcess_FindInvalidData | aiProcess_FindDegenerates;
+                         aiProcess_FindInvalidData | aiProcess_FindDegenerates /*| aiProcess_FlipWindingOrder */;
 
   Assimp::Importer imp;
   imp.SetPropertyBool(AI_CONFIG_PP_FD_REMOVE, true);
@@ -139,30 +147,164 @@ void SceneGraphFactory::createMeshes(aiScene const* const inputScene, const ComP
                                      const ComPtr<ID3D12CommandQueue>& commandQueue, Scene& outputScene)
 {
   // Assignment 3
-  (void)inputScene;
-  (void)device;
-  (void)commandQueue;
-  (void)outputScene;
+  
+  // Acquiring a pointer to the array of meshes available in the scene
+  aiMesh**   meshesInsideTheScene     = inputScene->mMeshes;
+
+  // Getting the number of meshes available in the input scene
+  const ui32 numberOfMeshesInTheScene = inputScene->mNumMeshes;
+  outputScene.m_meshes.resize(numberOfMeshesInTheScene);
+
+  // Iterating over the meshes, creating a triangle mesh and adding it to the vector of meshes
+  for (ui32 i = 0; i < numberOfMeshesInTheScene; i++)
+  {
+    // Acquiring a pointer to the mesh which should be added
+    const aiMesh* meshToAdd       = meshesInsideTheScene[i];
+    const ui32    meshPrimitiveTypes = meshToAdd->mPrimitiveTypes;
+    const bool    hasPoints          = meshPrimitiveTypes & aiPrimitiveType_POINT;
+    const bool    hasLines           = meshPrimitiveTypes & aiPrimitiveType_LINE;
+    const bool    hasTriangles       = meshPrimitiveTypes & aiPrimitiveType_TRIANGLE;
+    const bool    hasPolygons        = meshPrimitiveTypes & aiPrimitiveType_POLYGON;
+
+    // Getting id of the material
+    const auto materialIndex = meshToAdd->mMaterialIndex;
+
+    // Acquiring a pointer to the array containing positions
+    const aiVector3D* positionsArray = meshToAdd->mVertices;
+
+    // Getting the number of positions
+    const ui32 sizeOfPositionsArray = meshToAdd->mNumVertices;
+
+    // Acquiring a pointer to the normal vectors
+    const aiVector3D* normalVectorsArray = meshToAdd->mNormals;
+
+    // Converting the array containing positions into a vector
+    std::vector<f32v3> positions((f32v3*)positionsArray, (f32v3*)positionsArray + sizeOfPositionsArray);
+
+    // Converting the array containing normal vectors into a vector
+    std::vector<f32v3> normalVectors((f32v3*)normalVectorsArray, (f32v3*)normalVectorsArray + sizeOfPositionsArray);
+
+    std::vector<f32v3> textureCoordinates((f32v3*)meshToAdd->mTextureCoords[0],
+                                          (f32v3*)meshToAdd->mTextureCoords[0] + sizeOfPositionsArray);
+   // const ui32         numberOfUVChannelsAvailable = meshToAdd->GetNumUVChannels();
+     
+    const std::vector<ui32v3> indicesGroupdInFaces = getTriangleIndicesFromAiMesh(meshToAdd);
+
+    std::cout << "Mesh Information:\n"
+              << "-----------------\n"
+              << "Primitive Types:\n"
+              << "    Points: " << (hasPoints ? "Yes" : "No") << "\n"
+              << "    Lines: " << (hasLines ? "Yes" : "No") << "\n"
+              << "    Triangles: " << (hasTriangles ? "Yes" : "No") << "\n"
+              << "    Polygons: " << (hasPolygons ? "Yes" : "No") << "\n"
+              << "Material ID: " << materialIndex << "\n"
+              << "Number of Positions: " << positions.size() << "\n"
+              << "Number of Normal Vectors: " << normalVectors.size() << "\n"
+              << "Number of Texture Coordinates: " << textureCoordinates.size() << "\n"
+              << "Number of Faces: " << indicesGroupdInFaces.size() << "\n"
+              << "  Number of Indices: " << indicesGroupdInFaces.size() * 3 << std::endl;
+
+    TriangleMeshD3D12 triangleMeshToAdd(positions.data(), normalVectors.data(), textureCoordinates.data(),
+                                   sizeOfPositionsArray, indicesGroupdInFaces.data(),
+                                   (ui32)(indicesGroupdInFaces.size() * 3), materialIndex, device, commandQueue);
+
+
+   outputScene.m_meshes.at(i) = triangleMeshToAdd;
+
+  }
 }
+
+
+static inline glm::mat4 aiMatrix4x4ToGlm(const aiMatrix4x4& from)
+{
+  //glm::mat4 to {};
+
+  //to[0][0] = f32(from->a1);
+  //to[0][1] = f32(from->b1);
+  //to[0][2] = f32(from->c1);
+  //to[0][3] = f32(from->d1);
+  //to[1][0] = f32(from->a2);
+  //to[1][1] = f32(from->b2);
+  //to[1][2] = f32(from->c2);
+  //to[1][3] = f32(from->d2);
+  //to[2][0] = f32(from->a3);
+  //to[2][1] = f32(from->b3);
+  //to[2][2] = f32(from->c3);
+  //to[2][3] = f32(from->d3);
+  //to[3][0] = f32(from->a4);
+  //to[3][1] = f32(from->b4);
+  //to[3][2] = f32(from->c4);
+  //to[3][3] = f32(from->d4);
+
+  //return to;
+
+   return glm::transpose(glm::make_mat4(&from.a1));
+}
+
 
 ui32 SceneGraphFactory::createNodes(aiScene const* const inputScene, Scene& outputScene, aiNode const* const inputNode)
 {
   (void)inputScene;
-  (void)outputScene;
-  (void)inputNode;
+  inputNode->mChildren;
+  const ui32 numberOfChildrenOfInputNode = inputNode->mNumChildren;
+  
+  const ui32        numberOfMeshesOfInputNode   = inputNode->mNumMeshes;
+  const auto        meshesOfInputNode           = inputNode->mMeshes;
+
+
+  const aiMatrix4x4 parentRelativeTransformation = inputNode->mTransformation;
+  glm::mat4         convertedParentRelativeTransformation = aiMatrix4x4ToGlm(parentRelativeTransformation);
+
+   Scene::Node nodeToAdd;
+   nodeToAdd.transformation = convertedParentRelativeTransformation;
+   outputScene.m_nodes.push_back(nodeToAdd);
+
+   ui32 nodeToAddId = ui32(outputScene.m_nodes.size() - 1);
+   
+   for (ui32 i = 0; i < numberOfMeshesOfInputNode; i++)
+   {
+     outputScene.m_nodes.at(nodeToAddId).meshIndices.emplace_back(meshesOfInputNode[i]);
+   }
+
+  if (numberOfChildrenOfInputNode == 0)
+  {
+    return nodeToAddId;
+  }
+
+  aiNode**  childrenOfInputNode = inputNode->mChildren;
+  for (ui32 i = 0; i < numberOfChildrenOfInputNode; i++)
+  {
+    const ui32 childNodeCreated = createNodes(inputScene, outputScene, childrenOfInputNode[i]);
+    outputScene.m_nodes.at(nodeToAddId).childIndices.emplace_back(childNodeCreated);
+  }
+
   // Assignment 4
-  return 0;
+  return nodeToAddId;
 }
 
 void SceneGraphFactory::computeSceneAABB(Scene& scene, AABB& aabb, ui32 nodeIdx, f32m4 transformation)
 {
-  (void)transformation;
-  (void)scene;
-  (void)aabb;
+
+
   if (nodeIdx >= scene.getNumberOfNodes())
   {
     return;
   }
+
+  Scene::Node currentNode               = scene.getNode(nodeIdx);
+  f32m4       accumulatedTransformation = transformation * currentNode.transformation;
+
+
+  for (ui32 i = 0; i < currentNode.meshIndices.size(); i++)
+  {
+    aabb = aabb.getUnion(scene.getMesh(currentNode.meshIndices[i]).getAABB().getTransformed(accumulatedTransformation));
+  }
+
+  for (const ui32& nodeIndex : currentNode.childIndices)
+  {
+    computeSceneAABB(scene, aabb, nodeIndex, accumulatedTransformation);
+  }
+
   // Assignment 5
 }
 
@@ -183,10 +325,36 @@ void SceneGraphFactory::createMaterials(aiScene const* const                    
                                         std::unordered_map<std::filesystem::path, ui32> textureFileNameToTextureIndex,
                                         const ComPtr<ID3D12Device>& device, Scene& outputScene)
 {
+  const ui32 numberOfMaterialsInTheScene= inputScene->mNumMaterials;
+  const auto materialsInTheScene         = inputScene->mMaterials;
+  outputScene.m_materials.resize(numberOfMaterialsInTheScene);
+  for (ui32 i = 0; i < numberOfMaterialsInTheScene; i++)
+  {
+    aiMaterial* materialExtracted = materialsInTheScene[i];
+    ai_real           exponentPropertyValue(0.0f);
+    f32v4 emissiveFactors = getColor(AI_MATKEY_COLOR_EMISSIVE, materialExtracted);
+    f32v4 ambientColor = getColor(AI_MATKEY_COLOR_AMBIENT, materialExtracted);
+    f32v4 diffuseColor = getColor(AI_MATKEY_COLOR_DIFFUSE, materialExtracted);
+    f32v4 specularColor = getColor(AI_MATKEY_COLOR_SPECULAR, materialExtracted);
+    aiGetMaterialFloat(materialExtracted, AI_MATKEY_SHININESS, &exponentPropertyValue);
+
+   Scene::MaterialConstantBuffer materialToAddConstantBuffer(
+        ambientColor + f32v4(emissiveFactors.r, emissiveFactors.g, emissiveFactors.b, emissiveFactors.a), diffuseColor,
+        f32v4(specularColor.x, specularColor.y, specularColor.z, exponentPropertyValue));
+
+    ConstantBufferD3D12 materialToAddConstantBufferCreated(materialToAddConstantBuffer, device);
+    Scene::Material     materialToAdd(materialToAddConstantBufferCreated);
+    outputScene.m_materials.at(i) = materialToAdd;
+
+    std::cout << materialExtracted->GetName().C_Str() << std::endl;
+    std::cout << "Ambient:" << ambientColor.x << ambientColor.y << ambientColor.z << std::endl;
+    std::cout << "Diffuse:" << diffuseColor.x << diffuseColor.y << diffuseColor.z << std::endl;
+    std::cout << "Specular:" << specularColor.x << specularColor.y << specularColor.z << exponentPropertyValue << std::endl;
+  }
+
   (void)inputScene;
   (void)textureFileNameToTextureIndex;
-  (void)device;
-  (void)outputScene;
+
   // Assignment 7
   // Assignment 9
   // Assignment 10

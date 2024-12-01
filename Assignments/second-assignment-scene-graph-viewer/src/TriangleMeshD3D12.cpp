@@ -29,9 +29,15 @@ TriangleMeshD3D12::TriangleMeshD3D12(f32v3 const* const positions, f32v3 const* 
 
 void TriangleMeshD3D12::addToCommandList(const ComPtr<ID3D12GraphicsCommandList>& commandList) const
 {
+
+   commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
   // Assignment 2
   commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
   commandList->IASetIndexBuffer(&m_indexBufferView);
+  std::cout << "Vertex and index buffer successfully set!" << std::endl;
+
+
+  commandList->DrawIndexedInstanced(m_nIndices, 1, 0, 0, 0);
 }
 
 const AABB TriangleMeshD3D12::getAABB() const
@@ -68,9 +74,10 @@ void TriangleMeshD3D12::createVertexBufferOnCPU(f32v3 const* const positions, f3
     Vertex vertexToAdd            = {};
     vertexToAdd.position = positions[i];
     vertexToAdd.normal   = normals[i];
-    vertexToAdd.textureCoordinate = textureCoordinates[i];
-    m_vertexBufferOnCPU.push_back(vertexToAdd);
+    vertexToAdd.textureCoordinate = f32v2(textureCoordinates[i].x, textureCoordinates[i].y);
+    m_vertexBufferOnCPU.at(i) = vertexToAdd;
   }
+
   std::cout << "Vertex buffer created successfully on the CPU" << std::endl;
 }
 
@@ -79,11 +86,23 @@ void TriangleMeshD3D12::createVertexBufferOnCPU(f32v3 const* const positions, f3
   m_indexBufferOnCPU.resize(nIndices);
   for (ui32 i = 0; i < (nIndices / 3); i++)
   {
-    m_indexBufferOnCPU.push_back(indexBuffer[i].x);
-    m_indexBufferOnCPU.push_back(indexBuffer[i].y);
-    m_indexBufferOnCPU.push_back(indexBuffer[i].z);
+    m_indexBufferOnCPU.at(i * 3) = indexBuffer[i].x;
+    m_indexBufferOnCPU.at(i * 3 + 1) = indexBuffer[i].y;
+    m_indexBufferOnCPU.at(i * 3 + 2) = indexBuffer[i].z;
   }
   std::cout << "Index buffer created successfully on the CPU!" << std::endl;
+
+  ui32 minVal = 0;
+  ui32 maxVal = 0;
+
+  for (const auto& val : m_indexBufferOnCPU)
+  {
+    minVal = glm::min(minVal, val);
+    maxVal = glm::max(maxVal, val);
+  }
+
+  std::cout << "Min. Index: " << minVal << " Max. Index:" << maxVal << std::endl;
+
 }
 
 void TriangleMeshD3D12::uploadVertexBuffOnGPU(const ComPtr<ID3D12Device>&       device,

@@ -32,13 +32,13 @@ cbuffer Material : register(b2)
     float4 specularColorAndExponent;
 }
 
-Texture2D<float4> g_textureAmbient : register(t0);
-Texture2D<float4> g_textureDiffuse : register(t1);
-Texture2D<float4> g_textureSpecular : register(t2);
-Texture2D<float4> g_textureEmissive : register(t3);
-Texture2D<float4> g_textureNormal : register(t4);
+//Texture2D<float4> g_textureAmbient : register(t0);
+//Texture2D<float4> g_textureDiffuse : register(t1);
+//Texture2D<float4> g_textureSpecular : register(t2);
+//Texture2D<float4> g_textureEmissive : register(t3);
+//Texture2D<float4> g_textureNormal : register(t4);
 
-SamplerState g_sampler : register(s0);
+//SamplerState g_sampler : register(s0);
 
 VertexShaderOutput VS_main(float3 position : POSITION, float3 normal : NORMAL, float2 texCoord : TEXCOORD)
 {
@@ -56,5 +56,9 @@ VertexShaderOutput VS_main(float3 position : POSITION, float3 normal : NORMAL, f
 float4 PS_main(VertexShaderOutput input)
     : SV_TARGET
 {
-  return float4(input.viewSpaceNormal.x, input.texCoord.y, 0.0f, 1.0f); 
+//  return float4(input.viewSpaceNormal.x, input.texCoord.y, 0.0f, 1.0f);
+   return float4(input.texCoord.x, input.texCoord.y, 0.0f, 1.0f);
+   //return float4(ambientColor.x, ambientColor.y, ambientColor.z, ambientColor.w);
+
+  //return float4(1.0f, 0.0f, 0.0f, 1.0f);
 }

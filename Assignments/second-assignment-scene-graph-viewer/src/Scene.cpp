@@ -10,11 +10,31 @@ void addToCommandListImpl(Scene& scene, ui32 nodeIdx, f32m4 transformation,
                           const ComPtr<ID3D12GraphicsCommandList>& commandList, ui32 modelViewRootParameterIdx,
                           ui32 materialConstantsRootParameterIdx, ui32 srvRootParameterIdx)
 {
-  (void)scene;
-  (void)nodeIdx;
-  (void)transformation;
-  (void)commandList;
-  (void)modelViewRootParameterIdx;
+
+  if (nodeIdx >= scene.getNumberOfNodes())
+  {
+    return;
+  }
+
+  Scene::Node currentNode               = scene.getNode(nodeIdx);
+  f32m4       accumulatedTransformation =
+      transformation * currentNode.transformation;
+
+  for (ui32 i = 0; i < currentNode.meshIndices.size(); i++)
+  {
+    commandList->SetGraphicsRoot32BitConstants(modelViewRootParameterIdx, 16, &accumulatedTransformation, 0);
+    commandList->SetGraphicsRootConstantBufferView(
+        2, scene.getMaterial(scene.getMesh(currentNode.meshIndices[i]).getMaterialIndex()).materialConstantBuffer.getResource()->GetGPUVirtualAddress());
+    scene.getMesh(currentNode.meshIndices[i]).addToCommandList(commandList);
+  }
+
+  for (const ui32& nodeIndex : currentNode.childIndices)
+  {
+    addToCommandListImpl(scene, nodeIndex, accumulatedTransformation, commandList, modelViewRootParameterIdx,
+                         materialConstantsRootParameterIdx, srvRootParameterIdx);
+  }
+
+  
   (void)materialConstantsRootParameterIdx;
   (void)srvRootParameterIdx;
   // Assignemt 6

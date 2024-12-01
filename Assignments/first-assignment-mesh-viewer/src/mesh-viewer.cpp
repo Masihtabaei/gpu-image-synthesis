@@ -406,7 +406,7 @@ void MeshViewer::calculateNormalizationTransformation()
   glm::highp_mat4 scalingMatrix  = glm::scale(glm::mat4(1.0f), scalingFactors);
 
 
-    // Assembling a transformation matrix which rotates the mesh loaded 180 degress around the x axis so that we can view it from the side
+    // Assembling a transformation matrix which rotates the mesh loaded 180 degrees around the x axis so that we can view it from the side
   constexpr glm::f32 rotationAngle  = glm::radians(180.0f);
   glm::vec3          rotationAxisY  = glm::vec3(0.0f, 1.0f, 0.0f);
   glm::mat4          rotationMatrix = glm::rotate(glm::mat4(1.0f), rotationAngle, rotationAxisY);

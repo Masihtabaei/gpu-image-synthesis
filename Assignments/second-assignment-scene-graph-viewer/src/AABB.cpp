@@ -43,7 +43,7 @@ f32m4 AABB::getNormalizationTransformation() const
 
   f32v3             axesLengths        = calculateAxesLengths();
   f32 longestAxisLength = findLongestAxisLegth();
-  f32v3             scalingFactors     = axesLengths / longestAxisLength;
+  f32v3             scalingFactors     = (glm::vec3(1.0f) / longestAxisLength);
   glm::highp_mat4 scalingMatrix     = glm::scale(glm::mat4(1.0f), scalingFactors);
 
   return scalingMatrix * translationMatrix;

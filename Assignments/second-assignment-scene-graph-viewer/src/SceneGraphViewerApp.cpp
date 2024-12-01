@@ -72,46 +72,49 @@ void SceneGraphViewerApp::onDrawUI()
 
 void SceneGraphViewerApp::createRootSignature()
 {
-  const uint8_t NUMBER_OF_ROOT_PARAMETERS = 2;
-  const uint8_t    NUMBER_OF_DESCRIPTOR_RANGES = 2;
-  const uint8_t  NUMBER_OF_STATIC_SAMPLERS   = 1;
-  const uint8_t     NUMBER_OF_CONSTANT_BUFFER_VIEWS = 3;
-  const uint8_t NUMBER_OF_SHADER_RESOURCE_VIEWS = 5;
+  const uint8_t NUMBER_OF_ROOT_PARAMETERS = 3;
+  //const uint8_t    NUMBER_OF_DESCRIPTOR_RANGES = 1;
+  const uint8_t  NUMBER_OF_STATIC_SAMPLERS   = 0;
+  //const uint8_t     NUMBER_OF_CONSTANT_BUFFER_VIEWS = 1;
+  //const uint8_t NUMBER_OF_SHADER_RESOURCE_VIEWS = 5;
 
   // Assignment 1
-  CD3DX12_DESCRIPTOR_RANGE descriptorRanges[NUMBER_OF_DESCRIPTOR_RANGES] = {};
+  //CD3DX12_DESCRIPTOR_RANGE descriptorRanges[NUMBER_OF_DESCRIPTOR_RANGES] = {};
   // D3D12_DESCRIPTOR_RANGE_FLAG_NONE -> D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE
-  descriptorRanges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, NUMBER_OF_CONSTANT_BUFFER_VIEWS, 0, 0);
+  //descriptorRanges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, NUMBER_OF_CONSTANT_BUFFER_VIEWS, 0, 0);
   // D3D12_DESCRIPTOR_RANGE_FLAG_NONE -> D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE
-  descriptorRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, NUMBER_OF_SHADER_RESOURCE_VIEWS, 0);
+  //descriptorRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, NUMBER_OF_SHADER_RESOURCE_VIEWS, 0);
 
   CD3DX12_ROOT_PARAMETER rootParameters[NUMBER_OF_ROOT_PARAMETERS] = {};
-  rootParameters[0].InitAsDescriptorTable(1, &descriptorRanges[0]);
-  rootParameters[1].InitAsDescriptorTable(1, &descriptorRanges[1]);
+  //rootParameters[0].InitAsDescriptorTable(1, &descriptorRanges[0]);
+  rootParameters[0].InitAsConstantBufferView(0, 0, D3D12_SHADER_VISIBILITY_ALL);
+  rootParameters[1].InitAsConstants(16, 1, 0, D3D12_SHADER_VISIBILITY_VERTEX);
+  rootParameters[2].InitAsConstantBufferView(2, 0, D3D12_SHADER_VISIBILITY_PIXEL);
 
-  D3D12_STATIC_SAMPLER_DESC staticSamplerDescription = {};
-  staticSamplerDescription.Filter                    = D3D12_FILTER_MIN_MAG_MIP_POINT;
-  staticSamplerDescription.AddressU                  = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-  staticSamplerDescription.AddressV                  = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-  staticSamplerDescription.AddressW                  = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-  staticSamplerDescription.MipLODBias                = 0;
-  staticSamplerDescription.MaxAnisotropy             = 0;
-  staticSamplerDescription.ComparisonFunc            = D3D12_COMPARISON_FUNC_NEVER;
-  staticSamplerDescription.BorderColor               = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
-  staticSamplerDescription.MinLOD                    = 0.0f;
-  staticSamplerDescription.MaxLOD                    = D3D12_FLOAT32_MAX;
-  staticSamplerDescription.ShaderRegister            = 0;
-  staticSamplerDescription.RegisterSpace             = 0;
-  staticSamplerDescription.ShaderVisibility          = D3D12_SHADER_VISIBILITY_ALL;
+  //D3D12_STATIC_SAMPLER_DESC staticSamplerDescription = {};
+  //staticSamplerDescription.Filter                    = D3D12_FILTER_MIN_MAG_MIP_POINT;
+  //staticSamplerDescription.AddressU                  = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+  //staticSamplerDescription.AddressV                  = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+  //staticSamplerDescription.AddressW                  = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+  //staticSamplerDescription.MipLODBias                = 0;
+  //staticSamplerDescription.MaxAnisotropy             = 0;
+  //staticSamplerDescription.ComparisonFunc            = D3D12_COMPARISON_FUNC_NEVER;
+  //staticSamplerDescription.BorderColor               = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+  //staticSamplerDescription.MinLOD                    = 0.0f;
+  //staticSamplerDescription.MaxLOD                    = D3D12_FLOAT32_MAX;
+  //staticSamplerDescription.ShaderRegister            = 0;
+  //staticSamplerDescription.RegisterSpace             = 0;
+  //staticSamplerDescription.ShaderVisibility          = D3D12_SHADER_VISIBILITY_ALL;
 
   CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDescription = {};
   rootSignatureDescription.Init(NUMBER_OF_ROOT_PARAMETERS, rootParameters, NUMBER_OF_STATIC_SAMPLERS,
-                                &staticSamplerDescription,
+                                nullptr,
                                 D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
   
   ComPtr<ID3DBlob> rootBlob, errorBlob;
   D3D12SerializeRootSignature(&rootSignatureDescription, D3D_ROOT_SIGNATURE_VERSION_1, &rootBlob, &errorBlob);
   getDevice()->CreateRootSignature(0, rootBlob->GetBufferPointer(), rootBlob->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature));
+  std::cout << "Root signature created successfully!" << std::endl;
 }
 
 void SceneGraphViewerApp::createPipeline()
@@ -148,19 +151,24 @@ void SceneGraphViewerApp::createPipeline()
 void SceneGraphViewerApp::drawScene(const ComPtr<ID3D12GraphicsCommandList>& cmdLst)
 {
   updateSceneConstantBuffer();
-  // Assigment 2: Uncomment after successfull implementation.
-  // const auto cb                   = m_constantBuffers[getFrameIndex()].getResource()->GetGPUVirtualAddress();
+  // Assignment 2: Uncomment after successful implementation.
+  const auto cb                   = m_constantBuffers[getFrameIndex()].getResource()->GetGPUVirtualAddress();
   const auto cameraMatrix = m_examinerController.getTransformationMatrix();
-
   // Assignment 6
 
   cmdLst->SetPipelineState(m_pipelineState.Get());
 
-  // Assigment 2: Uncomment after successfull implementation.
-  // cmdLst->SetGraphicsRootSignature(m_rootSignature.Get());
-  // cmdLst->SetGraphicsRootConstantBufferView(0, cb);
+  // Assignment 2: Uncomment after successful implementation.
+  cmdLst->SetGraphicsRootSignature(m_rootSignature.Get());
+  cmdLst->SetGraphicsRootConstantBufferView(0, cb);
 
-  m_scene.addToCommandList(cmdLst, cameraMatrix, 1, 2, 3);
+  auto x = m_scene.getAABB();
+  auto t = x.getNormalizationTransformation();
+
+  //const auto modelMatrix = cameraMatrix * m_scene.getMesh(1).getAABB().getNormalizationTransformation();
+  //cmdLst->SetGraphicsRoot32BitConstants(1, 16, &modelMatrix, 0);
+  m_scene.addToCommandList(cmdLst, cameraMatrix * t, 1, 2, 3);
+  //m_scene.getMesh(1).addToCommandList(cmdLst);
 }
 
 namespace
@@ -174,7 +182,7 @@ struct ConstantBuffer
 
 void SceneGraphViewerApp::createSceneConstantBuffer()
 {
-  const ConstantBuffer cb         = {};
+  const ConstantBuffer cb {};
   const auto           frameCount = getDX12AppConfig().frameCount;
   m_constantBuffers.resize(frameCount);
   for (ui32 i = 0; i < frameCount; i++)
@@ -185,7 +193,7 @@ void SceneGraphViewerApp::createSceneConstantBuffer()
 
 void SceneGraphViewerApp::updateSceneConstantBuffer()
 {
-  ConstantBuffer cb;
+  ConstantBuffer cb = {};
   cb.projectionMatrix =
       glm::perspectiveFovLH_ZO<f32>(glm::radians(45.0f), (f32)getWidth(), (f32)getHeight(), 1.0f / 256.0f, 256.0f);
   m_constantBuffers[getFrameIndex()].upload(&cb);
