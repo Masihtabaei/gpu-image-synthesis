@@ -121,7 +121,7 @@ i32 getTexture(aiTextureType textureType, unsigned int textureIndex, aiMaterial 
     }
     else if (textureType == aiTextureType_SPECULAR)
     {
-      defaultTextureIndexToReturn = 1;
+      defaultTextureIndexToReturn = 0;
     }
     else if (textureType == aiTextureType_EMISSIVE)
     {
@@ -353,7 +353,7 @@ void SceneGraphFactory::createTextures(
     const ComPtr<ID3D12CommandQueue>& commandQueue, Scene& outputScene)
 {
   
-  ui8v4 defaultWhiteTextureData(1, 1, 1, 255);
+  ui8v4 defaultWhiteTextureData(255, 255, 255, 255);
   ui8v4 defaultBlackTextureData(0, 0, 0, 255);
   ui8v4 defaultNormalMapTextureData(0, 0, 255, 255);
 
