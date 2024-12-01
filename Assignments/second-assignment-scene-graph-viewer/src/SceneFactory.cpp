@@ -102,7 +102,46 @@ f32v4 getColor(char const* const pKey, unsigned int type, unsigned int idx, aiMa
   }
 }
 
+
+i32 getTexture(aiTextureType textureType, unsigned int textureIndex, aiMaterial const* const material,
+              std::unordered_map<std::filesystem::path, ui32> textureFileNameToTextureIndex)
+{
+  i32 defaultTextureIndexToReturn = 0;
+  aiString textureName("");
+  aiReturn textureRetrievingResult = material->GetTexture(textureType, textureIndex, &textureName);
+  if (textureRetrievingResult == aiReturn_FAILURE)
+  {
+    if (textureType == aiTextureType_AMBIENT)
+    {
+      defaultTextureIndexToReturn = 1;
+    }
+    else if (textureType == aiTextureType_DIFFUSE)
+    {
+      defaultTextureIndexToReturn = 0;
+    }
+    else if (textureType == aiTextureType_SPECULAR)
+    {
+      defaultTextureIndexToReturn = 1;
+    }
+    else if (textureType == aiTextureType_EMISSIVE)
+    {
+      defaultTextureIndexToReturn = 1;
+    }
+    else if (textureType == aiTextureType_HEIGHT)
+    {
+      defaultTextureIndexToReturn = 2;
+    }
+  }
+  else
+  {
+    defaultTextureIndexToReturn = textureFileNameToTextureIndex.find(textureName.C_Str())->second;
+  }
+  return defaultTextureIndexToReturn;
+}
+
 } // namespace
+
+
 
 namespace gims
 {
@@ -316,7 +355,7 @@ void SceneGraphFactory::createTextures(
   
   ui8v4 defaultWhiteTextureData(1, 1, 1, 255);
   ui8v4 defaultBlackTextureData(0, 0, 0, 255);
-  ui8v4 defaultNormalMapTextureData(0, 0, 0, 255);
+  ui8v4 defaultNormalMapTextureData(0, 0, 255, 255);
 
   Texture2DD3D12 defaultWhiteTexture(&defaultWhiteTextureData, 1, 1, device, commandQueue);
   Texture2DD3D12 defaultBlackTexture(&defaultBlackTextureData, 1, 1, device, commandQueue);
@@ -346,6 +385,15 @@ void SceneGraphFactory::createMaterials(aiScene const* const                    
   outputScene.m_materials.resize(numberOfMaterialsInTheScene);
   for (ui32 i = 0; i < numberOfMaterialsInTheScene; i++)
   {
+    ComPtr<ID3D12DescriptorHeap> srv;
+    D3D12_DESCRIPTOR_HEAP_DESC   desc = {};
+    desc.Type                         = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+    desc.NumDescriptors               = 5;
+    desc.NodeMask                     = 0;
+    desc.Flags                        = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+    throwIfFailed(device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&srv)));
+
+
     aiMaterial* materialExtracted = materialsInTheScene[i];
     ai_real           exponentPropertyValue(0.0f);
     f32v4 emissiveFactors = getColor(AI_MATKEY_COLOR_EMISSIVE, materialExtracted);
@@ -353,13 +401,29 @@ void SceneGraphFactory::createMaterials(aiScene const* const                    
     f32v4 diffuseColor = getColor(AI_MATKEY_COLOR_DIFFUSE, materialExtracted);
     f32v4 specularColor = getColor(AI_MATKEY_COLOR_SPECULAR, materialExtracted);
     aiGetMaterialFloat(materialExtracted, AI_MATKEY_SHININESS, &exponentPropertyValue);
+    
+    i32 ambientTextureIndex = getTexture(aiTextureType_AMBIENT, 0, materialExtracted, textureFileNameToTextureIndex);
+    i32 diffuseTextureIndex = getTexture(aiTextureType_DIFFUSE, 0, materialExtracted, textureFileNameToTextureIndex);
+    i32 specularTextureIndex = getTexture(aiTextureType_SPECULAR, 0, materialExtracted, textureFileNameToTextureIndex);
+    i32 emissiveTextureIndex = getTexture(aiTextureType_EMISSIVE, 0, materialExtracted, textureFileNameToTextureIndex);
+    i32 normalMapTextureIndex = getTexture(aiTextureType_HEIGHT, 0, materialExtracted, textureFileNameToTextureIndex);
 
-   Scene::MaterialConstantBuffer materialToAddConstantBuffer(
+
+    outputScene.m_textures.at(ambientTextureIndex).addToDescriptorHeap(device, srv, 0);
+    outputScene.m_textures.at(diffuseTextureIndex).addToDescriptorHeap(device, srv, 1);
+    outputScene.m_textures.at(specularTextureIndex).addToDescriptorHeap(device, srv, 2);
+    outputScene.m_textures.at(emissiveTextureIndex).addToDescriptorHeap(device, srv, 3);
+    outputScene.m_textures.at(normalMapTextureIndex).addToDescriptorHeap(device, srv, 4);
+    
+
+
+    Scene::MaterialConstantBuffer materialToAddConstantBuffer(
         ambientColor + f32v4(emissiveFactors.r, emissiveFactors.g, emissiveFactors.b, emissiveFactors.a), diffuseColor,
         f32v4(specularColor.x, specularColor.y, specularColor.z, exponentPropertyValue));
 
     ConstantBufferD3D12 materialToAddConstantBufferCreated(materialToAddConstantBuffer, device);
-    Scene::Material     materialToAdd(materialToAddConstantBufferCreated);
+
+    Scene::Material     materialToAdd(materialToAddConstantBufferCreated, srv);
     outputScene.m_materials.at(i) = materialToAdd;
 
     std::cout << materialExtracted->GetName().C_Str() << std::endl;
@@ -367,9 +431,6 @@ void SceneGraphFactory::createMaterials(aiScene const* const                    
     std::cout << "Diffuse:" << diffuseColor.x << diffuseColor.y << diffuseColor.z << std::endl;
     std::cout << "Specular:" << specularColor.x << specularColor.y << specularColor.z << exponentPropertyValue << std::endl;
   }
-
-  (void)inputScene;
-  (void)textureFileNameToTextureIndex;
 
   // Assignment 7
   // Assignment 9

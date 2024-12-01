@@ -72,9 +72,9 @@ void SceneGraphViewerApp::onDrawUI()
 
 void SceneGraphViewerApp::createRootSignature()
 {
-  const uint8_t NUMBER_OF_ROOT_PARAMETERS = 3;
+  const uint8_t NUMBER_OF_ROOT_PARAMETERS = 4;
   //const uint8_t    NUMBER_OF_DESCRIPTOR_RANGES = 1;
-  const uint8_t  NUMBER_OF_STATIC_SAMPLERS   = 0;
+  const uint8_t  NUMBER_OF_STATIC_SAMPLERS   = 1;
   //const uint8_t     NUMBER_OF_CONSTANT_BUFFER_VIEWS = 1;
   //const uint8_t NUMBER_OF_SHADER_RESOURCE_VIEWS = 5;
 
@@ -85,30 +85,34 @@ void SceneGraphViewerApp::createRootSignature()
   // D3D12_DESCRIPTOR_RANGE_FLAG_NONE -> D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE
   //descriptorRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, NUMBER_OF_SHADER_RESOURCE_VIEWS, 0);
 
+  CD3DX12_DESCRIPTOR_RANGE range[1] = {
+      {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5, 0},
+  };
   CD3DX12_ROOT_PARAMETER rootParameters[NUMBER_OF_ROOT_PARAMETERS] = {};
   //rootParameters[0].InitAsDescriptorTable(1, &descriptorRanges[0]);
   rootParameters[0].InitAsConstantBufferView(0, 0, D3D12_SHADER_VISIBILITY_ALL);
   rootParameters[1].InitAsConstants(16, 1, 0, D3D12_SHADER_VISIBILITY_VERTEX);
   rootParameters[2].InitAsConstantBufferView(2, 0, D3D12_SHADER_VISIBILITY_PIXEL);
+  rootParameters[3].InitAsDescriptorTable(1, &range[0]);
 
-  //D3D12_STATIC_SAMPLER_DESC staticSamplerDescription = {};
-  //staticSamplerDescription.Filter                    = D3D12_FILTER_MIN_MAG_MIP_POINT;
-  //staticSamplerDescription.AddressU                  = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-  //staticSamplerDescription.AddressV                  = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-  //staticSamplerDescription.AddressW                  = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-  //staticSamplerDescription.MipLODBias                = 0;
-  //staticSamplerDescription.MaxAnisotropy             = 0;
-  //staticSamplerDescription.ComparisonFunc            = D3D12_COMPARISON_FUNC_NEVER;
-  //staticSamplerDescription.BorderColor               = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
-  //staticSamplerDescription.MinLOD                    = 0.0f;
-  //staticSamplerDescription.MaxLOD                    = D3D12_FLOAT32_MAX;
-  //staticSamplerDescription.ShaderRegister            = 0;
-  //staticSamplerDescription.RegisterSpace             = 0;
-  //staticSamplerDescription.ShaderVisibility          = D3D12_SHADER_VISIBILITY_ALL;
+  D3D12_STATIC_SAMPLER_DESC staticSamplerDescription = {};
+  staticSamplerDescription.Filter                    = D3D12_FILTER_MIN_MAG_MIP_POINT;
+  staticSamplerDescription.AddressU                  = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+  staticSamplerDescription.AddressV                  = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+  staticSamplerDescription.AddressW                  = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+  staticSamplerDescription.MipLODBias                = 0;
+  staticSamplerDescription.MaxAnisotropy             = 0;
+  staticSamplerDescription.ComparisonFunc            = D3D12_COMPARISON_FUNC_NEVER;
+  staticSamplerDescription.BorderColor               = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+  staticSamplerDescription.MinLOD                    = 0.0f;
+  staticSamplerDescription.MaxLOD                    = D3D12_FLOAT32_MAX;
+  staticSamplerDescription.ShaderRegister            = 0;
+  staticSamplerDescription.RegisterSpace             = 0;
+  staticSamplerDescription.ShaderVisibility          = D3D12_SHADER_VISIBILITY_ALL;
 
   CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDescription = {};
   rootSignatureDescription.Init(NUMBER_OF_ROOT_PARAMETERS, rootParameters, NUMBER_OF_STATIC_SAMPLERS,
-                                nullptr,
+                                &staticSamplerDescription,
                                 D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
   
   ComPtr<ID3DBlob> rootBlob, errorBlob;

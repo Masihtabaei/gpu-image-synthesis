@@ -24,7 +24,15 @@ void addToCommandListImpl(Scene& scene, ui32 nodeIdx, f32m4 transformation,
   {
     commandList->SetGraphicsRoot32BitConstants(modelViewRootParameterIdx, 16, &accumulatedTransformation, 0);
     commandList->SetGraphicsRootConstantBufferView(
-        2, scene.getMaterial(scene.getMesh(currentNode.meshIndices[i]).getMaterialIndex()).materialConstantBuffer.getResource()->GetGPUVirtualAddress());
+        materialConstantsRootParameterIdx,
+        scene.getMaterial(scene.getMesh(currentNode.meshIndices[i]).getMaterialIndex())
+                                 .materialConstantBuffer.getResource()
+                                 ->GetGPUVirtualAddress());
+    commandList->SetDescriptorHeaps(1, scene.getMaterial(scene.getMesh(currentNode.meshIndices[i]).getMaterialIndex()).srvDescriptorHeap.GetAddressOf());
+    commandList->SetGraphicsRootDescriptorTable(
+        srvRootParameterIdx, scene.getMaterial(scene.getMesh(currentNode.meshIndices[i]).getMaterialIndex())
+               .srvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+
     scene.getMesh(currentNode.meshIndices[i]).addToCommandList(commandList);
   }
 
@@ -34,9 +42,6 @@ void addToCommandListImpl(Scene& scene, ui32 nodeIdx, f32m4 transformation,
                          materialConstantsRootParameterIdx, srvRootParameterIdx);
   }
 
-  
-  (void)materialConstantsRootParameterIdx;
-  (void)srvRootParameterIdx;
   // Assignemt 6
   // Assignment 10
 }

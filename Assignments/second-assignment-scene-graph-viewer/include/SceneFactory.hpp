@@ -14,6 +14,7 @@ public:
                                      const ComPtr<ID3D12CommandQueue>& commandQueue);
 
 private:
+
   static void createMeshes(aiScene const* const inputScene, const ComPtr<ID3D12Device>& device,
                            const ComPtr<ID3D12CommandQueue>& commandQueue, Scene& outputScene);
 
