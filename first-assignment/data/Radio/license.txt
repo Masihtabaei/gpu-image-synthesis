@@ -1,0 +1,11 @@
+Model Information:
+* title:	TR-66 Rhythm Arranger
+* source:	https://sketchfab.com/3d-models/tr-66-rhythm-arranger-b58a105480dc4785ad39a3155476f7ec
+* author:	noform (https://sketchfab.com/noform)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "TR-66 Rhythm Arranger" (https://sketchfab.com/3d-models/tr-66-rhythm-arranger-b58a105480dc4785ad39a3155476f7ec) by noform (https://sketchfab.com/noform) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

@@ -1,0 +1,11 @@
+Model Information:
+* title:	An Iranian Lunch
+* source:	https://sketchfab.com/3d-models/an-iranian-lunch-a926e5adbf6e41a0b91858d296a0c3f4
+* author:	Shahriar Shahrabi (https://sketchfab.com/shahriyarshahrabi)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "An Iranian Lunch" (https://sketchfab.com/3d-models/an-iranian-lunch-a926e5adbf6e41a0b91858d296a0c3f4) by Shahriar Shahrabi (https://sketchfab.com/shahriyarshahrabi) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

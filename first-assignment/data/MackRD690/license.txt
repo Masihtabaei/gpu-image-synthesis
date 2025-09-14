@@ -1,0 +1,11 @@
+Model Information:
+* title:	Mack RD 690 Pump Truck
+* source:	https://sketchfab.com/3d-models/mack-rd-690-pump-truck-711a22b7da964d0495b43340b913112c
+* author:	Doz3 (https://sketchfab.com/Doz3)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Mack RD 690 Pump Truck" (https://sketchfab.com/3d-models/mack-rd-690-pump-truck-711a22b7da964d0495b43340b913112c) by Doz3 (https://sketchfab.com/Doz3) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
