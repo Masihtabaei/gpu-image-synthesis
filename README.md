@@ -1,4 +1,4 @@
-# Coburg Mesh And Scene Viewers
+# Coburg Mesh and Scene Viewers
 
 > [!NOTE]  
 > This project was completed as part of the **GPU Image Synthesis** course during the **Winter Term 2024/25** of our undergraduate studies, offered by [Prof. Dr. Quirin Meyer](https://www.hs-coburg.de/en/personen/prof-dr-quirin-meyer/) at [Coburg University](https://www.hs-coburg.de/en/). It was originally developed on our university’s GitLab instance and later partially migrated here, so some elements like issues may be missing.
