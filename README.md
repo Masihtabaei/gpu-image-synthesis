@@ -42,7 +42,7 @@ cd build
 cmake -DCMAKE_TOOLCHAIN_FILE=<vcpkg.cmake-file-path> ..
 ```
 
-After generating the solution, you can open it and select and run the project desired. 
+After generating the solution, you can open it to select and run the project desired. 
 
 ## Screenshots
 <img width="400" height="400" alt="first-assignment-mesh-viewer_CHX7p73IQP" src="https://github.com/user-attachments/assets/c1f951dd-7edc-499d-b16e-f006d713fdd4" />
